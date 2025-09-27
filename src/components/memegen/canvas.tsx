@@ -106,7 +106,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(
     }));
 
     return (
-      <div className="border border-base-100 inline-block">
+      <div className="border border-base-300 inline-block">
         <canvas
           ref={canvasRef}
           width={800}

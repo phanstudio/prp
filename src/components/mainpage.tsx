@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import LoadingScreen from './main/loader';
-import PhotoEditor from './photo';
+// import PhotoEditor from './photo';
 // import EffectsPanel from './defualt';
 
 const MainPage:React.FC = () => {
@@ -19,7 +19,7 @@ const MainPage:React.FC = () => {
       
       {/* Content overlay */}
       <div className={`relative z-10 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-        <PhotoEditor />
+        {/* <PhotoEditor /> */}
         {/* <EffectsPanel /> */}
       </div>
     </div>

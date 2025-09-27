@@ -12,6 +12,7 @@ interface TextPanelProps {
   onDeleteElement: () => void;
   onSave: () => void;
   classname: string;
+  onResetTemplate: () => void;
 }
 
 const TextPanel: React.FC<TextPanelProps> = ({
@@ -23,6 +24,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
   onDeleteElement,
   onSave,
   classname,
+  onResetTemplate,
 }) => {
   return (
     <div className={classname}>
@@ -65,7 +67,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
             Generate Meme
           </button>
           <button
-            onClick={onAddText}
+            onClick={onResetTemplate}
             className="btn btn-neutral text-sm join-item"
           >
             Reset
