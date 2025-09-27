@@ -84,13 +84,12 @@ export const MemeGenerator: React.FC<{ template: Template}> = ({ template }) => 
         <div className="card-body join join-vertical lg:join-horizontal">
           {/* Main Editor */}
           <div className="flex-2 join-item items-center ">
-            <div className="flex w-full gap-4 items-center">
+            <div className="w-full gap-4 items-center">
               <h1 className="text-3xl font-bold flex-shrink-0">
                 {toTitleCase(template.name)}
               </h1>
-              <p className="text-base-content/70 truncate min-w-0 flex-1">
+              <p className="text-base-content/70 truncate min-w-0 flex-1 md:max-w-[40vw] max-w-[80vw]">
                 {template.description}
-                jhhddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
               </p>
             </div>
             {/* change to center later */}

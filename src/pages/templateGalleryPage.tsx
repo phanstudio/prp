@@ -1,18 +1,20 @@
 // TemplateGallery.tsx
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Search } from "lucide-react";
+import { Plus, Trash2, Search, Edit2 } from "lucide-react";
 import TemplateService from "../components/templateService";
 import type { Template } from "../components/types";
 
 interface TemplateGalleryProps {
   onSelectTemplate: (template: Template) => void;
   onCreateTemplate: () => void;
+  onEditTemplate: (template: Template) => void;
   isAdmin?: boolean; // admin toggle
 }
 
 export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   onSelectTemplate,
   onCreateTemplate,
+  onEditTemplate,
   isAdmin = false,
 }) => {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -121,12 +123,26 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                   className="w-full h-48 object-cover"
                 />
                 {isAdmin && (
-                  <button
-                    onClick={(e) => deleteTemplate(template.id, e)}
-                    className="btn btn-sm btn-circle btn-error absolute top-2 right-2"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
+                  <div className="join absolute top-2 right-2 gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteTemplate(template.id, e);
+                      }}
+                      className="btn btn-sm btn-circle btn-error  join-item"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // <— Prevents the card click
+                        onEditTemplate(template);
+                      }}
+                      className="btn btn-sm btn-circle btn-error join-item"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                    </button>
+                  </div>
                 )}
               </figure>
 

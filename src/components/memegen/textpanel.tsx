@@ -1,5 +1,5 @@
 import React from "react";
-import type { TextElement } from "./textelement";
+import type { TextElement } from "../types";
 import TextElementList from "./textelementlist";
 
 // Text Panel Component

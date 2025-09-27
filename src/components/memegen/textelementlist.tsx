@@ -1,6 +1,6 @@
 // TextElementList.tsx
-import React, { useState, useRef, useEffect } from "react";
-import type { TextElement } from "./textelement";
+import React from "react";
+import type { TextElement } from "../types";
 import TextEditor from "./texteditor";
 import { Bolt, Pencil } from "lucide-react";
 

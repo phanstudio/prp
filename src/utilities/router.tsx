@@ -3,66 +3,48 @@ import { useNavigate, useParams } from "react-router-dom";
 import { MemeGenerator } from "../pages/memeGeneratorPage";
 import TemplateService from "../components/templateService";
 import type { Template } from "../components/types";
-import { TemplateCreator } from "../components/templateCreator";
+import { TemplateCreator } from "../pages/templateCreatorPage";
 import { TemplateGallery } from "../pages/templateGalleryPage";
-import { MemeEditor } from "../components/newMainPage";
 
-// Template Gallery Route Component
-export const TemplateGalleryRoute: React.FC = () => {
+interface GalleryRouteProps {
+  isAdmin?: boolean;
+}
+
+export const GalleryRoute: React.FC<GalleryRouteProps> = ({ isAdmin = false }) => {
   const navigate = useNavigate();
 
   const handleSelectTemplate = (template: Template) => {
-    // Store template in localStorage temporarily for the route
     sessionStorage.setItem("selectedTemplate", JSON.stringify(template));
     navigate(`/generator/${template.id}`);
   };
 
+  const handleEditTemplate = (template: Template) => {
+    if (!isAdmin) return;
+    sessionStorage.setItem("selectedTemplate", JSON.stringify(template));
+    navigate(`/admin/edit/${template.id}`);
+  };
+
   const handleCreateTemplate = () => {
-    navigate("/creator");
+    if (!isAdmin) return;
+    navigate("/admin/creator");
   };
 
   return (
     <TemplateGallery
       onSelectTemplate={handleSelectTemplate}
-      onCreateTemplate={handleCreateTemplate}
-      isAdmin={true}
+      onEditTemplate={isAdmin ? handleEditTemplate : ()=>{}}
+      onCreateTemplate={isAdmin ? handleCreateTemplate : ()=>{}}
+      isAdmin={isAdmin}
     />
   );
 };
-
-// // Template Gallery Route Component
-// export const AdminTemplateGalleryRoute: React.FC = () => {
-//     const navigate = useNavigate();
-  
-//     const handleSelectTemplate = (template: Template) => {
-//       // Store template in localStorage temporarily for the route
-//       sessionStorage.setItem("selectedTemplate", JSON.stringify(template));
-//       navigate(`/generator/${template.id}`);
-//     };
-  
-//     const handleCreateTemplate = () => {
-//       navigate("/creator");
-//     };
-  
-//     return (
-//       // <TemplateGallery
-//       //   onSelectTemplate={handleSelectTemplate}
-//       //   onCreateTemplate={handleCreateTemplate}
-//       // />
-//       <TemplateGallery
-//         onSelectTemplate={handleSelectTemplate}
-//         onCreateTemplate={handleCreateTemplate}
-//         isAdmin={true}
-//       />
-//     );
-// };
 
 // Template Creator Route Component
 export const TemplateCreatorRoute: React.FC = () => {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/admin");
   };
 
   return <TemplateCreator onBack={handleBack} />;
@@ -93,7 +75,7 @@ export const MemeEditorRoute: React.FC = () => {
         setTemplate(foundTemplate);
       } else {
         // Template not found, redirect to gallery
-        navigate("/", { replace: true });
+        navigate("/admin", { replace: true });
       }
     }
   }, [templateId, navigate]);
@@ -101,7 +83,7 @@ export const MemeEditorRoute: React.FC = () => {
   const handleBack = () => {
     // Clean up session storage
     sessionStorage.removeItem("selectedTemplate");
-    navigate("/");
+    navigate("/admin");
   };
 
   if (!template) {
@@ -117,7 +99,6 @@ export const MemeEditorRoute: React.FC = () => {
 
 
 // add a nav bar to go to the libary and the collections
-
 // Meme Generator Route Component
 export const MemeGeneratorRoute: React.FC = () => {
   const navigate = useNavigate();
