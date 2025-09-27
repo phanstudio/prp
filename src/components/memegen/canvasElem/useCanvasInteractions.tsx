@@ -1,0 +1,245 @@
+import { useState, useCallback } from "react";
+import type { TextElement } from "../textelement";
+import { CanvasRenderer } from "./CanvasRenderer";
+
+interface UseCanvasInteractionsProps {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  textElements: TextElement[];
+  selectedElement: string | null;
+  onElementSelect: (id: string | null) => void;
+  onElementMove: (id: string, x: number, y: number) => void;
+  onElementRotate: (id: string, rotation: number) => void;
+  selectBorderColor: string;
+  renderer: CanvasRenderer | null;
+}
+
+export const useCanvasInteractions = ({
+  canvasRef,
+  textElements,
+  selectedElement,
+  onElementSelect,
+  onElementMove,
+  onElementRotate,
+  selectBorderColor,
+  renderer
+}: UseCanvasInteractionsProps) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [rotationStartAngle, setRotationStartAngle] = useState(0);
+
+  // Helper function to convert degrees to radians
+  const degreesToRadians = (degrees: number) => (degrees * Math.PI) / 180;
+
+  // Helper function to get mouse coordinates relative to canvas
+  const getMouseCoordinates = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
+    
+    return { x, y };
+  };
+
+  // Helper function to get touch coordinates relative to canvas
+  const getTouchCoordinates = (event: React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    // Use the first touch point
+    const touch = event.touches[0] || event.changedTouches[0];
+    if (!touch) return { x: 0, y: 0 };
+    
+    const x = (touch.clientX - rect.left) * scaleX;
+    const y = (touch.clientY - rect.top) * scaleY;
+    
+    return { x, y };
+  };
+
+  // Helper function to transform mouse coordinates for rotation
+  const transformCoordinatesForRotation = (x: number, y: number, element: TextElement, ctx: CanvasRenderingContext2D) => {
+    ctx.font = `${element.fontSize}px ${element.fontFamily}`;
+    const metrics = ctx.measureText(element.text);
+    const textWidth = element.text.trim() === "" ? 100 : metrics.width;
+    const textHeight = element.fontSize;
+    const centerX = element.x + textWidth / 2;
+    const centerY = element.y + textHeight / 2;
+    
+    // Inverse transform to get local coordinates
+    const cos = Math.cos(-degreesToRadians(element.rotation || 0));
+    const sin = Math.sin(-degreesToRadians(element.rotation || 0));
+    const dx = x - centerX;
+    const dy = y - centerY;
+    const localX = centerX + (dx * cos - dy * sin);
+    const localY = centerY + (dx * sin + dy * cos);
+    
+    return { localX, localY, centerX, centerY };
+  };
+
+  // Helper function to check if coordinates are within element bounds
+  const isWithinElementBounds = (localX: number, localY: number, element: TextElement, ctx: CanvasRenderingContext2D) => {
+    ctx.font = `${element.fontSize}px ${element.fontFamily}`;
+    const metrics = ctx.measureText(element.text);
+    const textWidth = element.text.trim() === "" ? 100 : metrics.width;
+    const textHeight = element.fontSize;
+    const padding = 8;
+
+    return (
+      localX >= element.x - padding &&
+      localX <= element.x + textWidth + padding &&
+      localY >= element.y - padding &&
+      localY <= element.y + textHeight + padding
+    );
+  };
+
+  // Generic interaction handler that works for both mouse and touch
+  const handleInteractionStart = useCallback((x: number, y: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !renderer) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let clickedElement: string | null = null;
+    let clickedOnRotationHandle = false;
+
+    // Check if we clicked on a rotation handle first
+    if (selectedElement) {
+      const element = textElements.find((el) => el.id === selectedElement);
+      if (element) {
+        const { localX, localY, centerX, centerY } = transformCoordinatesForRotation(x, y, element, ctx);
+        
+        if (renderer.isClickOnRotationHandle(localX, localY, element, ctx)) {
+          clickedOnRotationHandle = true;
+          setIsRotating(true);
+          
+          // Calculate initial angle using original coordinates
+          const initialAngle = Math.atan2(y - centerY, x - centerX);
+          const currentRotation = degreesToRadians(element.rotation || 0);
+          setRotationStartAngle(initialAngle - currentRotation);
+          return;
+        }
+      }
+    }
+
+    // Check if we clicked on any text element
+    for (const element of [...textElements].reverse()) {
+      const { localX, localY } = transformCoordinatesForRotation(x, y, element, ctx);
+
+      if (isWithinElementBounds(localX, localY, element, ctx)) {
+        clickedElement = element.id;
+        break;
+      }
+    }
+
+    if (clickedElement && !clickedOnRotationHandle) {
+      onElementSelect(clickedElement);
+      setIsDragging(true);
+      const element = textElements.find((el) => el.id === clickedElement);
+      if (element) {
+        setDragOffset({ x: x - element.x, y: y - element.y });
+      }
+    } else if (!clickedOnRotationHandle) {
+      onElementSelect(null);
+    }
+  }, [canvasRef, textElements, selectedElement, onElementSelect, renderer]);
+
+  // Generic interaction move handler
+  const handleInteractionMove = useCallback((x: number, y: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    if (isDragging && selectedElement) {
+      const newX = x - dragOffset.x;
+      const newY = y - dragOffset.y;
+      onElementMove(selectedElement, newX, newY);
+    } else if (isRotating && selectedElement) {
+      const element = textElements.find((el) => el.id === selectedElement);
+      if (element) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          const { centerX, centerY } = transformCoordinatesForRotation(x, y, element, ctx);
+          
+          // Calculate angle from center to point, accounting for initial offset
+          const currentAngle = Math.atan2(y - centerY, x - centerX);
+          const rotation = ((currentAngle - rotationStartAngle) * 180) / Math.PI;
+          onElementRotate(selectedElement, rotation);
+        }
+      }
+    }
+
+    // Update cursor based on hover state (only for mouse, not touch)
+    if (selectedElement && !isDragging && !isRotating && renderer) {
+      const element = textElements.find((el) => el.id === selectedElement);
+      if (element) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          const { localX, localY } = transformCoordinatesForRotation(x, y, element, ctx);
+          
+          if (renderer.isClickOnRotationHandle(localX, localY, element, ctx)) {
+            canvas.style.cursor = 'grab';
+          } else {
+            canvas.style.cursor = 'pointer';
+          }
+        }
+      }
+    }
+  }, [isDragging, isRotating, selectedElement, textElements, dragOffset, rotationStartAngle, onElementMove, onElementRotate, renderer, canvasRef]);
+
+  // Generic interaction end handler
+  const handleInteractionEnd = useCallback(() => {
+    setIsDragging(false);
+    setIsRotating(false);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.style.cursor = 'pointer';
+    }
+  }, [canvasRef]);
+
+  // Mouse event handlers
+  const handleMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    const { x, y } = getMouseCoordinates(event);
+    handleInteractionStart(x, y);
+  }, [handleInteractionStart]);
+
+  const handleMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    const { x, y } = getMouseCoordinates(event);
+    handleInteractionMove(x, y);
+  }, [handleInteractionMove]);
+
+  const handleMouseUp = useCallback(() => {
+    handleInteractionEnd();
+  }, [handleInteractionEnd]);
+
+  // Touch event handlers
+  const handleTouchStart = useCallback((event: React.TouchEvent<HTMLCanvasElement>) => {
+    const { x, y } = getTouchCoordinates(event);
+    handleInteractionStart(x, y);
+  }, [handleInteractionStart]);
+
+  const handleTouchMove = useCallback((event: React.TouchEvent<HTMLCanvasElement>) => {
+    const { x, y } = getTouchCoordinates(event);
+    handleInteractionMove(x, y);
+  }, [handleInteractionMove]);
+
+  const handleTouchEnd = useCallback((event: React.TouchEvent<HTMLCanvasElement>) => {
+    handleInteractionEnd();
+  }, [handleInteractionEnd]);
+
+  return {
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd
+  };
+};

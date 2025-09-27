@@ -121,7 +121,7 @@ const PhotoEditor: React.FC = () => {
             onDeleteElement={deleteSelectedElement}
             classname="join-item rounded-sm flex-1"
             // "w-80 p-4 max-w-150"
-            onSave={() => canvasRef.current?.saveImage()} 
+            onSave={() => {canvasRef.current?.saveImage(); setSelectedElement(null);}} 
           />
         </div>
       </div>
