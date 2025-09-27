@@ -47,7 +47,7 @@ interface FileUploadProps {
 const FileUpload = forwardRef<HTMLInputElement, FileUploadProps>(
   ({ onChange }, ref) => {
     return (
-      <label className="btn-primary cursor-pointer btn btn-xs sm:btn-sm md:btn-md lg:btn-lg xl:btn-xl">
+      <label className="btn-primary cursor-pointer btn btn-md">
         📂 Upload Image
         <input
           type="file"

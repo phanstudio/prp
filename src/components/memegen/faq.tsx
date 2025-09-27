@@ -3,9 +3,9 @@ import React from "react";
 // should turn to a card
 const Faq: React.FC = () => {
   return (
-    // <div className="mt-6 card bg-base-100 w-full shadow-sm">
-    <div className="mt-6 bg-base-100 w-full">
-      {/* <div className="card-body"> */}
+    <div className="mt-6 card bg-base-200 w-full shadow-sm">
+    {/* // <div className="mt-6 bg-base-100 w-full"> */}
+      <div className="card-body">
         <div className="collapse collapse-plus bg-base-100 border border-base-300">
           <input type="radio" name="my-accordion-3" defaultChecked />
           <div className="collapse-title font-semibold">
@@ -40,7 +40,7 @@ const Faq: React.FC = () => {
             6. Save your image when done
           </div>
         </div>
-      {/* </div> */}
+      </div>
     </div>
   );
 };

@@ -1,16 +1,18 @@
 import React from "react";
 import type { TextElement } from "./textelement";
-import TextElementList from './textelementlist';
-import TextEditor from './texteditor';
+import TextElementList from "./textelementlist";
+import TextEditor from "./texteditor";
 
 // Text Panel Component
 interface TextPanelProps {
   textElements: TextElement[];
   selectedElement: string | null;
   onAddText: () => void;
-  onElementSelect: (id: string) => void;
+  onElementSelect: (id: string | null) => void;
   onUpdateElement: (field: keyof TextElement, value: string | number) => void;
   onDeleteElement: () => void;
+  onSave: () => void;
+  classname: string;
 }
 
 const TextPanel: React.FC<TextPanelProps> = ({
@@ -19,37 +21,57 @@ const TextPanel: React.FC<TextPanelProps> = ({
   onAddText,
   onElementSelect,
   onUpdateElement,
-  onDeleteElement
+  onDeleteElement,
+  onSave,
+  classname,
 }) => {
-  const selectedTextElement = textElements.find(el => el.id === selectedElement) || null;
-
   return (
-    <div className="w-80 bg-gray-50 p-4 rounded-lg">
+    <div className={classname}>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Text Elements</h2>
-        <button
-          onClick={onAddText}
-          className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
-        >
-          Add Text
-        </button>
       </div>
-      
+
       {/* List of text elements */}
-      <TextElementList 
+      <TextElementList
         textElements={textElements}
         selectedElement={selectedElement}
         onElementSelect={onElementSelect}
+        onUpdate={(id, field, value) => {
+          if (selectedElement === id) {
+            onUpdateElement(field, value);
+          }
+        }}
+        onDelete={(id) => {
+          if (selectedElement === id) {
+            onDeleteElement();
+          }
+        }}
       />
       
-      {/* Edit Selected Element */}
-      <div className="border-t pt-4">
-        <h3 className="font-medium mb-3">Edit Selected Text</h3>
-        <TextEditor 
-          element={selectedTextElement}
-          onUpdate={onUpdateElement}
-          onDelete={onDeleteElement}
-        />
+      <div className="flex flex-col sm:text-center text-left">
+        <div className="join flex justify-between p-2">
+          <button
+            onClick={onAddText}
+            className="btn btn-neutral text-sm join-item flex-1"
+          >
+            Add text
+          </button>
+        </div>
+
+        <div className="join flex justify-between p-2 join-vertical md:join-horizontal">
+          <button
+            onClick={onSave}
+            className="btn btn-primary text-sm join-item"
+          >
+            Generate Meme
+          </button>
+          <button
+            onClick={onAddText}
+            className="btn btn-neutral text-sm join-item"
+          >
+            Reset
+          </button>
+        </div>
       </div>
     </div>
   );

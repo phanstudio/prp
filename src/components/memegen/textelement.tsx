@@ -6,5 +6,6 @@ export interface TextElement {
     fontSize: number;
     color: string;
     fontFamily: string;
+    rotation: number; // in degrees
   }
   

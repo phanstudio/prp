@@ -18,8 +18,8 @@ const TextEditor: React.FC<TextEditorProps> = ({ element, onUpdate, onDelete }) 
   }
 
   return (
-    <div className="space-y-3">
-      <div>
+    <div className="space-y-3 p-2">
+      {/* <div>
         <label className="block text-sm font-medium mb-1">Text:</label>
         <textarea
           value={element.text}
@@ -28,7 +28,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ element, onUpdate, onDelete }) 
           rows={2}
           placeholder="Enter your text here..."
         />
-      </div>
+      </div> */}
       
       <div>
         <label className="block text-sm font-medium mb-1">Font Size:</label>
@@ -74,7 +74,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ element, onUpdate, onDelete }) 
       
       <button
         onClick={onDelete}
-        className="w-full bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
+        className="btn w-full btn-error text-sm"
       >
         Delete This Text
       </button>

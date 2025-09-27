@@ -125,7 +125,6 @@ export default function EffectsPanel() {
       <div className="flex gap-2 justify-center">
         <button className="btn btn-secondary">✨ AI</button>
         <button className="btn btn-primary">🎭 Effects</button>
-        <button className="btn btn-outline">➕ Add Text</button>
       </div>
     </div>
   );
