@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Sparkles, Image as ImageIcon } from "lucide-react";
 
 export default function EffectsPanel() {

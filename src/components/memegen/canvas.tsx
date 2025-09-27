@@ -4,7 +4,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import type { TextElement } from "./textelement";
+import type { TextElement } from "../types";
 import { CanvasRenderer } from "./canvasElem/CanvasRenderer";
 import { useCanvasInteractions } from "./canvasElem/useCanvasInteractions";
 
@@ -26,7 +26,7 @@ interface CanvasProps {
 
 const Canvas = forwardRef<CanvasHandle, CanvasProps>(
   ({ image, textElements, selectedElement, onElementSelect, onElementMove, onElementRotate }, ref) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null!);
     const rendererRef = useRef<CanvasRenderer | null>(null);
     
     const {
@@ -43,7 +43,6 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(
       onElementSelect,
       onElementMove,
       onElementRotate,
-      selectBorderColor,
       renderer: rendererRef.current
     });
 

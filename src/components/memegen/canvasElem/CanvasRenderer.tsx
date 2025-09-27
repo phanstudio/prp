@@ -1,4 +1,4 @@
-import type { TextElement } from "../textelement";
+import type { TextElement } from "../../types";
 
 export class CanvasRenderer {
   private canvasRef: React.RefObject<HTMLCanvasElement>;

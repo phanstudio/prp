@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { TextElement } from "../textelement";
+import type { TextElement } from "../../types";
 import { CanvasRenderer } from "./CanvasRenderer";
 
 interface UseCanvasInteractionsProps {
@@ -9,7 +9,7 @@ interface UseCanvasInteractionsProps {
   onElementSelect: (id: string | null) => void;
   onElementMove: (id: string, x: number, y: number) => void;
   onElementRotate: (id: string, rotation: number) => void;
-  selectBorderColor: string;
+  // selectBorderColor: string;
   renderer: CanvasRenderer | null;
 }
 
@@ -20,7 +20,7 @@ export const useCanvasInteractions = ({
   onElementSelect,
   onElementMove,
   onElementRotate,
-  selectBorderColor,
+  // selectBorderColor,
   renderer
 }: UseCanvasInteractionsProps) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -230,7 +230,7 @@ export const useCanvasInteractions = ({
     handleInteractionMove(x, y);
   }, [handleInteractionMove]);
 
-  const handleTouchEnd = useCallback((event: React.TouchEvent<HTMLCanvasElement>) => {
+  const handleTouchEnd = useCallback((_: React.TouchEvent<HTMLCanvasElement>) => {
     handleInteractionEnd();
   }, [handleInteractionEnd]);
 
