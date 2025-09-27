@@ -32,9 +32,14 @@ const Header = () => {
               <li>
                 <Link to={"#"}>About</Link>
               </li>
+              <li>
+                <Link to={"/admin"}>Admin</Link>
+              </li>
             </ul>
           </div>
-          <Link to={"/"} className="btn btn-ghost text-xl">PostRugPhotos</Link>
+          <Link to={"/"} className="btn btn-ghost text-xl">
+            PostRugPhotos
+          </Link>
         </div>
         <div className="navbar-center hidden lg:flex">
           <ul className="menu menu-horizontal px-1">
