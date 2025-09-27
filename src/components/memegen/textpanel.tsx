@@ -1,7 +1,6 @@
 import React from "react";
 import type { TextElement } from "./textelement";
 import TextElementList from "./textelementlist";
-import TextEditor from "./texteditor";
 
 // Text Panel Component
 interface TextPanelProps {
