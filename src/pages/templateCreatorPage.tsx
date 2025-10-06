@@ -42,7 +42,7 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
 
     const img = new Image();
     img.onload = () => setImage(img);
-    img.src = templateToEdit.image;
+    img.src = templateToEdit.imageUrl;
   }, [templateToEdit]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,23 +121,20 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
       alert("Please provide an image and template name");
       return;
     }
-    // addToast('Message sent!', 'success', 3000);
-    // addToast('Message sent!', 'error', 4000);
-    // addToast('Message sent!', 'info', 5000);
-    // addToast('Message sent!', 'warning', 6000);
     const loadingToast = addToast(`Creating Template: ${templateName.trim().substring(0, 10)}`, 'loading', 0);
 
+    console.log(textElements);
     const templateData = {
       name: templateName.trim(),
       description: templateDescription.trim(),
-      image: image.src,
+      // imageUrl: image.src,
       textElements,
       tags: templateTags.split(",").map((t) => t.trim()).filter(Boolean),
     };
 
     if (templateToEdit) {
       // Update existing template
-      TemplateService.updateTemplate(templateToEdit.id, templateData);
+      TemplateService.updateTemplate(templateToEdit.id.toString(), templateData);
       alert("Template updated successfully!");
     } else {
       const canvas = canvasRef.current;

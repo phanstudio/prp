@@ -13,17 +13,18 @@ export interface TextElement {
 }
 
 export interface Template {
-  id: string;
+  id: Number;
   name: string;
   description?: string;
-  image: string; // base64 data URL
+  imageUrl: string; // base64 data URL
   textElements: TextElement[];
   createdAt: Date;
   tags?: string[];
+  thumbnailUrl: string;
 }
 
 export interface TemplateIn {
-  id: string;
+  id: string;//Number
   name: string;
   description?: string;
   image_url: string;

@@ -118,6 +118,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(
     };
 
     const saveFiles = async (): Promise<{ background: File | null; edited: File | null }> => {
+      onElementSelect(null);
       const background = await getBackgroundFile();
       const edited = await getCanvasFile();
     

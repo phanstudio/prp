@@ -23,7 +23,7 @@ export const RegularLayout: React.FC = () => {
         onLogout={handleLogout}
       />
       <div className="flex-1 pt-16">
-        <Banner
+        {/* <Banner
           messages={[
             "Welcome to the site — new features are live!",
             "Maintenance tonight 00:00 - expect brief downtime.",
@@ -32,7 +32,7 @@ export const RegularLayout: React.FC = () => {
           ]}
           bgClass="bg-primary text-primary-content"
           className="text-sm md:text-base"
-        />
+        /> */}
         <main className="flex-1 p16">
           <Outlet />
         </main>

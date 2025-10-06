@@ -167,3 +167,12 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     </ToastContext.Provider>
   );
 };
+
+
+// examples
+// addToast('Message sent!', 'success', 3000);
+// addToast('Message sent!', 'error', 4000);
+// addToast('Message sent!', 'info', 5000);
+// addToast('Message sent!', 'warning', 6000);
+// const loadingToast = addToast(`Creating Template: ${templateName.trim().substring(0, 10)}`, 'loading', 0);
+// removeToast(loadingToast);

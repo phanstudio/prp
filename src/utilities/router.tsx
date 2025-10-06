@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MemeGenerator } from "../pages/memeGeneratorPage";
-import TemplateService from "../services/templateService";
 import type { Template } from "../components/types";
 import { TemplateCreator } from "../pages/templateCreatorPage";
 import { TemplateGallery } from "../pages/templateGalleryPage";
+import { useTemplates } from "../contexts/TemplateContext";
 
 interface GalleryRouteProps {
   isAdmin?: boolean;
@@ -14,13 +14,13 @@ export const GalleryRoute: React.FC<GalleryRouteProps> = ({ isAdmin = false }) =
   const navigate = useNavigate();
 
   const handleSelectTemplate = (template: Template) => {
-    sessionStorage.setItem("selectedTemplate", JSON.stringify(template));
+    // sessionStorage.setItem("selectedTemplate", JSON.stringify(template));
     navigate(`/generator/${template.id}`);
   };
 
   const handleEditTemplate = (template: Template) => {
     if (!isAdmin) return;
-    sessionStorage.setItem("selectedTemplate", JSON.stringify(template));
+    // sessionStorage.setItem("selectedTemplate", JSON.stringify(template));
     navigate(`/admin/edit/${template.id}`);
   };
 
@@ -55,34 +55,22 @@ export const MemeEditorRoute: React.FC = () => {
   const navigate = useNavigate();
   const { templateId } = useParams<{ templateId: string }>();
   const [template, setTemplate] = useState<Template | null>(null);
-
+  const { templates } = useTemplates();
+  
   useEffect(() => {
-    if (templateId) {
-      // Try to get from sessionStorage first (from navigation)
-      const sessionTemplate = sessionStorage.getItem("selectedTemplate");
-      if (sessionTemplate) {
-        const parsedTemplate = JSON.parse(sessionTemplate);
-        if (parsedTemplate.id === templateId) {
-          setTemplate(parsedTemplate);
-          return;
-        }
-      }
-
+    if (templateId && templates.length > 0) {
+      const id = Number(templateId);
       // Fallback: get from stored templates
-      const templates = TemplateService.getTemplates();
-      const foundTemplate = templates.find((t) => t.id === templateId);
+      const foundTemplate = templates.find((t) => t.id === id);
       if (foundTemplate) {
         setTemplate(foundTemplate);
       } else {
-        // Template not found, redirect to gallery
         navigate("/admin", { replace: true });
       }
     }
-  }, [templateId, navigate]);
+  }, [templateId, templates, navigate]);
 
   const handleBack = () => {
-    // Clean up session storage
-    sessionStorage.removeItem("selectedTemplate");
     navigate("/admin");
   };
 
@@ -94,46 +82,30 @@ export const MemeEditorRoute: React.FC = () => {
     );
   }
 
-  return <TemplateCreator onBack={handleBack}  templateToEdit={template}/>;
+  return <TemplateCreator onBack={handleBack} templateToEdit={template}/>;
 };
 
-
 // add a nav bar to go to the libary and the collections
-// Meme Generator Route Component
 export const MemeGeneratorRoute: React.FC = () => {
   const navigate = useNavigate();
   const { templateId } = useParams<{ templateId: string }>();
+  const { templates } = useTemplates();
   const [template, setTemplate] = useState<Template | null>(null);
 
   useEffect(() => {
-    if (templateId) {
-      // Try to get from sessionStorage first (from navigation)
-      const sessionTemplate = sessionStorage.getItem("selectedTemplate");
-      if (sessionTemplate) {
-        const parsedTemplate = JSON.parse(sessionTemplate);
-        if (parsedTemplate.id === templateId) {
-          setTemplate(parsedTemplate);
-          return;
-        }
-      }
-
-      // Fallback: get from stored templates
-      const templates = TemplateService.getTemplates();
-      const foundTemplate = templates.find((t) => t.id === templateId);
-      if (foundTemplate) {
-        setTemplate(foundTemplate);
+    if (templateId && templates.length > 0) {
+      const id = Number(templateId);
+      const found = templates.find(t => t.id === id);
+      if (found) {
+        setTemplate(found);
       } else {
         navigate("/", { replace: true });
       }
     }
-  }, [templateId, navigate]);
+  }, [templateId, templates, navigate]);
 
   if (!template) {
-    return (
-      <div className="min-h-screen bg-base-200 flex items-center justify-center">
-        <div className="loading loading-spinner loading-lg"></div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
   return <MemeGenerator template={template} />;

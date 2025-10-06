@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Search, Edit2 } from "lucide-react";
 import type { Template } from "../components/types";
 import TemplateService from "../services/templateService";
+import { useTemplates } from "../contexts/TemplateContext";
 
 interface TemplateGalleryProps {
   onSelectTemplate: (template: Template) => void;
@@ -17,24 +18,29 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   onEditTemplate,
   isAdmin = false,
 }) => {
-  const [templates, setTemplates] = useState<Template[]>([]);
+  // const [templates, setTemplates] = useState<Template[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState<string>("");
-
-  // useEffect(() => {
-  //   setTemplates(await TemplateService.getTemplates());
-  // }, []);
+  const { templates, setTemplates } = useTemplates();
 
   const fetchTemplates = async () => {
     const data = await TemplateService.getTemplates();
-    setTemplates(data);
+    console.log(data)
+    setTemplates(data); // updates context + sessionStorage
   };
 
+  // useEffect(() => {
+  //   if (templates.length === 0) {
+  //     fetchTemplates();
+  //   }
+  // }, []);
+
+  // const fetchTemplates = async () => {
+  //   const data = await TemplateService.getTemplates();
+  //   setTemplates(data);
+  // };
+
   useEffect(() => {
-    // const fetchTemplates = async () => {
-    //   const data = await TemplateService.getTemplates();
-    //   setTemplates(data);
-    // };
     fetchTemplates();
   }, []);
 
@@ -137,13 +143,13 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredTemplates.map((template) => (
             <div
-              key={template.id}
+              key={template.id.toString()}
               className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => onSelectTemplate(template)}
             >
               <figure className="relative">
                 <img
-                  src={template.image}
+                  src={template.thumbnailUrl}
                   alt={template.name}
                   className="w-full h-48 object-cover"
                 />
@@ -152,7 +158,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteTemplate(template.id, e);
+                        deleteTemplate(template.id.toString(), e);
                       }}
                       className="btn btn-sm btn-circle btn-error  join-item"
                     >

@@ -1,6 +1,7 @@
 // src/services/templateService.ts
 import authService from './authService';
 import type { Template, TemplateIn } from '../components/types';
+import humps from 'humps';
 
 export default class TemplateService {
   private static axios = authService.getAxiosInstance();
@@ -11,11 +12,13 @@ export default class TemplateService {
       const response = await this.axios.get<Template[]>('/templates', {
         params: { search, skip, limit }
       });
-      // swap to stuff
-      return response.data.map((t: any) => ({
+      const data = humps.camelizeKeys(response.data);
+      return data.map((t: any) => ({
         ...t,
-        createdAt: new Date(t.created_at || t.createdAt),
-        image: t.thumbnail_url,
+        createdAt: new Date(t.createdAt),
+        textElements: (t.textElements || []).map((el: any) => ({
+          ...el,
+        })),
       }));
     } catch (error) {
       console.error('Failed to fetch templates:', error);
@@ -25,7 +28,7 @@ export default class TemplateService {
 
   // Create template with files
   static async saveTemplate(
-    template: Omit<Template, 'id' | 'createdAt'>,
+    template: Omit<Template, 'id' | 'createdAt'| 'imageUrl'| 'thumbnailUrl'>,
     file: File,
     file2: File
   ): Promise<TemplateIn> {
@@ -42,7 +45,7 @@ export default class TemplateService {
       }
       
       // Convert text_elements to JSON string as expected by FastAPI
-      formData.append('text_elements', JSON.stringify(template.textElements));
+      formData.append('text_elements', JSON.stringify(humps.decamelizeKeys(template.textElements)));
       
       // Add files
       formData.append('file', file);
@@ -80,7 +83,7 @@ export default class TemplateService {
     updates: Partial<Template>,
     file?: File,
     file2?: File
-  ): Promise<TemplateIn> {
+  ): Promise<any> { // Template
     try {
       const formData = new FormData();
       
@@ -96,15 +99,15 @@ export default class TemplateService {
       if (file) formData.append('file', file);
       if (file2) formData.append('file2', file2);
 
-      const response = await this.axios.put<TemplateIn>(`/templates/${id}`, formData, {
+      const response = await this.axios.put<any>(`/templates/${id}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-
+      const data = humps.camelizeKeys(response.data);
       return {
-        ...response.data,
-        created_at: new Date(response.data.created_at)
+        ...data,
+        createdAt: new Date(data.createdAt)
       };
     } catch (error) {
       console.error('Failed to update template:', error);

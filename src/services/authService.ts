@@ -1,7 +1,7 @@
 // src/services/authService.ts
 import axios, { type AxiosInstance, AxiosError } from 'axios';
 
-const BACKEND_URL = "https://prp-backend-st1s.onrender.com";
+const BACKEND_URL = "http://127.0.0.1:8000";//"https://prp-backend-st1s.onrender.com";
 const TOKEN_KEY = 'auth_token';
 
 interface LoginResponse {

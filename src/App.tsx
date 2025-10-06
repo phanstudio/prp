@@ -8,39 +8,42 @@ import { RegularLayout, AdminLayout } from "./utilities/layouts";
 import './App.css';
 import './font.css';
 import { ToastProvider } from './services/ToastProvider';
+import { TemplateProvider } from "./contexts/TemplateContext";
 
 const AppRoutes: React.FC = () => {
   return (
     <Router>
       <ToastProvider>
         <AuthProvider>
-          <Routes>
-            {/* Public login route */}
-            <Route path="/login" element={<LoginPage />} />
+          <TemplateProvider>
+            <Routes>
+              {/* Public login route */}
+              <Route path="/login" element={<LoginPage />} />
 
-            {/* Regular user routes - no auth required for viewing */}
-            <Route element={<RegularLayout />}>
-              <Route path="/" element={<GalleryRoute />} />
-              <Route path="/generator/:templateId" element={<MemeGeneratorRoute />} />
-            </Route>
+              {/* Regular user routes - no auth required for viewing */}
+              <Route element={<RegularLayout />}>
+                <Route path="/" element={<GalleryRoute />} />
+                <Route path="/generator/:templateId" element={<MemeGeneratorRoute />} />
+              </Route>
 
-            {/* Admin routes - protected with superuser check */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute requireAdmin>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<GalleryRoute isAdmin />} />
-              <Route path="creator" element={<TemplateCreatorRoute />} />
-              <Route path="edit/:templateId" element={<MemeEditorRoute />} />
-            </Route>
+              {/* Admin routes - protected with superuser check */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<GalleryRoute isAdmin />} />
+                <Route path="creator" element={<TemplateCreatorRoute />} />
+                <Route path="edit/:templateId" element={<MemeEditorRoute />} />
+              </Route>
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </TemplateProvider>
         </AuthProvider>
       </ToastProvider>
     </Router>
