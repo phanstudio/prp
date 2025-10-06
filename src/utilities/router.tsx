@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MemeGenerator } from "../pages/memeGeneratorPage";
-import TemplateService from "../components/templateService";
+import TemplateService from "../services/templateService";
 import type { Template } from "../components/types";
 import { TemplateCreator } from "../pages/templateCreatorPage";
 import { TemplateGallery } from "../pages/templateGalleryPage";

@@ -99,8 +99,8 @@ export class CanvasRenderer {
     ctx.fillStyle = element.text.trim() === "" ? "rgba(255,255,255,0.5)" : element.color;
 
     if (element.text.trim() !== "") {
-      ctx.strokeStyle = element.color === "#ffffff" ? "#000000" : "#ffffff";
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = element.outlineColor || "#000000";
+      ctx.lineWidth = element.outlineSize || 1;
       ctx.strokeText(displayText, element.x, element.y);
     }
     ctx.fillText(displayText, element.x, element.y);

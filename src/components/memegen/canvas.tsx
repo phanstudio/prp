@@ -13,6 +13,7 @@ const selectBorderColor = "oklch(70% 0.14 182.503)";//getComputedStyle(document.
 // what methods the parent can call via ref
 export interface CanvasHandle {
   saveImage: () => void;
+  saveFiles: () => Promise<{ background: File | null; edited: File | null }>;
 }
 
 interface CanvasProps {
@@ -86,6 +87,43 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(
       rendererRef.current.redraw(image, textElements, selectedElement);
     }, [image, textElements, selectedElement]);
 
+    const getCanvasFile = async (): Promise<File | null> => {
+      const canvas = canvasRef.current;
+      if (!canvas) return null;
+      onElementSelect(null);
+    
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const file = new File([blob], "edited-photo.png", { type: blob.type });
+              resolve(file);
+            } else {
+              reject(new Error("Failed to generate file"));
+            }
+          }, "image/png");
+        }), 5
+      });
+    };
+    
+    const getBackgroundFile = async (): Promise<File | null> => {
+      if (!image) return null;
+    
+      // Convert image.src (URL or base64) to a Blob
+      const res = await fetch(image.src);
+      const blob = await res.blob();
+    
+      // Wrap in a File so you can send it in FormData
+      return new File([blob], "background.png", { type: blob.type });
+    };
+
+    const saveFiles = async (): Promise<{ background: File | null; edited: File | null }> => {
+      const background = await getBackgroundFile();
+      const edited = await getCanvasFile();
+    
+      return { background, edited };
+    };    
+
     // --- save logic (exposed to parent) ---
     const saveImage = () => {
       onElementSelect(null); // might increase the wait time or take it to some where else
@@ -102,6 +140,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(
 
     useImperativeHandle(ref, () => ({
       saveImage,
+      saveFiles
     }));
 
     return (

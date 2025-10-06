@@ -1,9 +1,10 @@
 import React, { useRef, useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import type { TextElement, Template } from "../components/types";
-import TemplateService from "../components/templateService";
 import TemplateEditor from "../components/templateEditor";
 import Canvas, { type CanvasHandle } from "../components/memegen/canvas";
+import TemplateService from "../services/templateService";
+import { useToast } from '../services/ToastProvider';
 
 interface TemplateCreatorProps {
   onBack: () => void;
@@ -22,6 +23,7 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
   const [templateDescription, setTemplateDescription] = useState("");
   const [templateTags, setTemplateTags] = useState("");
   const canvasRef = useRef<CanvasHandle>(null);
+  const { addToast, removeToast } = useToast();
 
   // Load existing template if editing
   useEffect(() => {
@@ -66,6 +68,8 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
       color: "#ffffff",
       fontFamily: "Arial",
       rotation: 0,
+      outlineColor: "#000000",
+      outlineSize: 1,
     };
     setTextElements([...textElements, newElement]);
     setSelectedElement(newElement.id);
@@ -88,6 +92,12 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
     );
   };
 
+  const handleClear = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // clears the file input
+    }
+  };
+
   const deleteSelectedElement = () => {
     if (!selectedElement) return;
     setTextElements((prev) => prev.filter((el) => el.id !== selectedElement));
@@ -106,11 +116,16 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
     setSelectedElement(null);
   };
 
-  const saveTemplate = () => {
+  const saveTemplate = async () => {
     if (!image || !templateName.trim()) {
       alert("Please provide an image and template name");
       return;
     }
+    // addToast('Message sent!', 'success', 3000);
+    // addToast('Message sent!', 'error', 4000);
+    // addToast('Message sent!', 'info', 5000);
+    // addToast('Message sent!', 'warning', 6000);
+    const loadingToast = addToast(`Creating Template: ${templateName.trim().substring(0, 10)}`, 'loading', 0);
 
     const templateData = {
       name: templateName.trim(),
@@ -125,9 +140,15 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
       TemplateService.updateTemplate(templateToEdit.id, templateData);
       alert("Template updated successfully!");
     } else {
-      // Save new template
-      TemplateService.saveTemplate(templateData);
-      alert("Template saved successfully!");
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const { background, edited } = await canvas.saveFiles();
+      if (!background || !edited) return;
+      await TemplateService.saveTemplate(templateData, background, edited);
+      addToast('Template saved successfully!', 'success', 3000);
+      removeToast(loadingToast, true);
+      // alert("Template saved successfully!");
+      
       // Reset form
       setImage(null);
       setTextElements([]);
@@ -135,21 +156,24 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
       setTemplateDescription("");
       setTemplateTags("");
       setSelectedElement(null);
+      handleClear();
     }
   };
+  // text-center
 
   return (
     <div className="max-w-7xl mx-auto p-4">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4 mb-4">
         <button onClick={onBack} className="btn btn-ghost btn-sm">
           <ArrowLeft className="w-4 h-4" />
           Back to Gallery
         </button>
-        <h1 className="text-3xl font-bold">
+        <h1 className="text-3xl font-bold flex-1 ">
           {templateToEdit ? "Edit Template" : "Create Template"}
         </h1>
       </div>
+      {/* <div className="divider"></div> */}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Canvas Area */}
@@ -188,7 +212,6 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
             </div>
           </div>
         </div>
-
         {/* Controls */}
         <TemplateEditor
           templateName={templateName}

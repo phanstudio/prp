@@ -17,6 +17,7 @@ export const MemeGenerator: React.FC<{ template: Template}> = ({ template }) => 
   const canvasRef = useRef<CanvasHandle>(null);
 
   useEffect(() => {
+    alert("in");
     const img = new Image();
     img.onload = () => setImage(img);
     img.src = template.image;

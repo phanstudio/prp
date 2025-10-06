@@ -8,6 +8,8 @@ export interface TextElement {
   color: string;
   fontFamily: string;
   rotation: number;
+  outlineColor?: string;
+  outlineSize?: number;
 }
 
 export interface Template {
@@ -18,4 +20,15 @@ export interface Template {
   textElements: TextElement[];
   createdAt: Date;
   tags?: string[];
+}
+
+export interface TemplateIn {
+  id: string;
+  name: string;
+  description?: string;
+  image_url: string;
+  textElements: TextElement[];
+  created_at: Date;
+  tag?: string;
+  thumbnail_url:string;
 }

@@ -1,8 +1,8 @@
 // TemplateGallery.tsx
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Search, Edit2 } from "lucide-react";
-import TemplateService from "../components/templateService";
 import type { Template } from "../components/types";
+import TemplateService from "../services/templateService";
 
 interface TemplateGalleryProps {
   onSelectTemplate: (template: Template) => void;
@@ -21,11 +21,35 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState<string>("");
 
+  // useEffect(() => {
+  //   setTemplates(await TemplateService.getTemplates());
+  // }, []);
+
+  const fetchTemplates = async () => {
+    const data = await TemplateService.getTemplates();
+    setTemplates(data);
+  };
+
   useEffect(() => {
-    setTemplates(TemplateService.getTemplates());
+    // const fetchTemplates = async () => {
+    //   const data = await TemplateService.getTemplates();
+    //   setTemplates(data);
+    // };
+    fetchTemplates();
   }, []);
 
-  const filteredTemplates = templates.filter((template) => {
+  const ensureTemplateId = (template: Partial<Template>): Template => {
+    return {
+      ...template,
+      id: template.id ?? (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`),
+      textElements: template.textElements ?? [],
+    } as Template;
+  };
+
+
+  const filteredTemplates = templates
+  .map(t => ensureTemplateId(t))
+  .filter((template) => {
     const matchesSearch =
       template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (template.description &&
@@ -42,7 +66,8 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
     event.stopPropagation();
     if (confirm("Are you sure you want to delete this template?")) {
       TemplateService.deleteTemplate(templateId);
-      setTemplates(TemplateService.getTemplates());
+      // setTemplates(TemplateService.getTemplates());
+      fetchTemplates();
     }
   };
 

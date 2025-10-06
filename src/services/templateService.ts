@@ -1,0 +1,114 @@
+// src/services/templateService.ts
+import authService from './authService';
+import type { Template, TemplateIn } from '../components/types';
+
+export default class TemplateService {
+  private static axios = authService.getAxiosInstance();
+
+  // Fetch templates from backend
+  static async getTemplates(search?: string, skip = 0, limit = 10): Promise<Template[]> {
+    try {
+      const response = await this.axios.get<Template[]>('/templates', {
+        params: { search, skip, limit }
+      });
+      // swap to stuff
+      return response.data.map((t: any) => ({
+        ...t,
+        createdAt: new Date(t.created_at || t.createdAt),
+        image: t.thumbnail_url,
+      }));
+    } catch (error) {
+      console.error('Failed to fetch templates:', error);
+      throw error;
+    }
+  }
+
+  // Create template with files
+  static async saveTemplate(
+    template: Omit<Template, 'id' | 'createdAt'>,
+    file: File,
+    file2: File
+  ): Promise<TemplateIn> {
+    try {
+      const formData = new FormData();
+      
+      // Add text fields
+      formData.append('name', template.name);
+      if (template.description) {
+        formData.append('description', template.description);
+      }
+      if (template.tags) {
+        formData.append('tag', template.tags.join(", "));
+      }
+      
+      // Convert text_elements to JSON string as expected by FastAPI
+      formData.append('text_elements', JSON.stringify(template.textElements));
+      
+      // Add files
+      formData.append('file', file);
+      formData.append('file2', file2);
+
+      const response = await this.axios.post<TemplateIn>('/templates', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      return {
+        ...response.data,
+        created_at: new Date(response.data.created_at)
+      };
+    } catch (error) {
+      console.error('Failed to save template:', error);
+      throw error;
+    }
+  }
+
+  // Delete template
+  static async deleteTemplate(id: string): Promise<void> {
+    try {
+      await this.axios.delete(`/templates/${id}`);
+    } catch (error) {
+      console.error('Failed to delete template:', error);
+      throw error;
+    }
+  }
+
+  // Update template
+  static async updateTemplate(
+    id: string, 
+    updates: Partial<Template>,
+    file?: File,
+    file2?: File
+  ): Promise<TemplateIn> {
+    try {
+      const formData = new FormData();
+      
+      // Add updated fields
+      if (updates.name) formData.append('name', updates.name);
+      if (updates.description) formData.append('description', updates.description);
+      if (updates.tags) formData.append('tag', updates.tags.join(", "));
+      if (updates.textElements) {
+        formData.append('text_elements', JSON.stringify(updates.textElements));
+      }
+      
+      // Add files if provided
+      if (file) formData.append('file', file);
+      if (file2) formData.append('file2', file2);
+
+      const response = await this.axios.put<TemplateIn>(`/templates/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      return {
+        ...response.data,
+        created_at: new Date(response.data.created_at)
+      };
+    } catch (error) {
+      console.error('Failed to update template:', error);
+      throw error;
+    }
+  }
+}

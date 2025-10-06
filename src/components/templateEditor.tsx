@@ -1,6 +1,7 @@
 import React from "react";
 import { Plus, Edit3, Trash2, Download } from "lucide-react";
 import type { TextElement } from "./types";
+import FontSelector from "./main/FontSelector";
 
 interface TemplateEditorProps {
   templateName: string;
@@ -151,7 +152,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                         <input
                           type="range"
                           min="12"
-                          max="72"
+                          max="100"
                           className="range range-sm"
                           value={element.fontSize}
                           onChange={(e) =>
@@ -166,6 +167,25 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                         </div>
                       </div>
                       <div>
+                        <label className="label-text text-xs">Outline Size</label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="30"
+                          className="range range-sm"
+                          value={element.outlineSize}
+                          onChange={(e) =>
+                            updateSelectedText(
+                              "outlineSize",
+                              parseInt(e.target.value)
+                            )
+                          }
+                        />
+                        <div className="text-xs text-center">
+                          {element.outlineSize}px
+                        </div>
+                      </div>
+                      <div>
                         <label className="label-text text-xs">Color</label>
                         <input
                           type="color"
@@ -176,21 +196,22 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                           }
                         />
                       </div>
+                      <div>
+                        <label className="label-text text-xs">Outline Color</label>
+                        <input
+                          type="color"
+                          className="input input-xs input-bordered w-full h-8"
+                          value={element.outlineColor}
+                          onChange={(e) =>
+                            updateSelectedText("outlineColor", e.target.value)
+                          }
+                        />
+                      </div>
                     </div>
-
-                    <select
-                      className="select select-sm select-bordered w-full"
+                    <FontSelector
                       value={element.fontFamily}
-                      onChange={(e) =>
-                        updateSelectedText("fontFamily", e.target.value)
-                      }
-                    >
-                      <option value="Arial">Arial</option>
-                      <option value="Impact">Impact</option>
-                      <option value="Times New Roman">Times New Roman</option>
-                      <option value="Comic Sans MS">Comic Sans MS</option>
-                      <option value="Courier New">Courier New</option>
-                    </select>
+                      onChange={(font) => updateSelectedText("fontFamily", font)}
+                    />
 
                     <button
                       onClick={deleteSelectedElement}
