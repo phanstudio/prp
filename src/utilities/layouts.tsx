@@ -1,7 +1,7 @@
 import React from "react";
 import Footer from "../components/main/footer";
 import Header from "../components/main/header";
-import Banner from "../components/main/banner";
+// import Banner from "../components/main/banner";
 import { Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 

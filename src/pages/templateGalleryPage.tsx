@@ -68,10 +68,10 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
 
   const allTags = [...new Set(templates.flatMap((t) => t.tags || []))].sort();
 
-  const deleteTemplate = (templateId: string, event: React.MouseEvent) => {
+  const deleteTemplate = async (templateId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     if (confirm("Are you sure you want to delete this template?")) {
-      TemplateService.deleteTemplate(templateId);
+      await TemplateService.deleteTemplate(templateId);
       // setTemplates(TemplateService.getTemplates());
       fetchTemplates();
     }
@@ -192,7 +192,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                     </span>
                   ))}
                   {(template.tags?.length || 0) > 3 && (
-                    <span className="badge badge-sm badge-outline">
+                    <span className="badge badge-sm badge-w">
                       +{(template.tags?.length || 0) - 3}
                     </span>
                   )}

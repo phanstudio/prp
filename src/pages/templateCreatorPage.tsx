@@ -42,6 +42,7 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
 
     const img = new Image();
     img.onload = () => setImage(img);
+    img.crossOrigin = "anonymous"; // 👈 Important
     img.src = templateToEdit.imageUrl;
   }, [templateToEdit]);
 
@@ -121,31 +122,29 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
       alert("Please provide an image and template name");
       return;
     }
-    const loadingToast = addToast(`Creating Template: ${templateName.trim().substring(0, 10)}`, 'loading', 0);
+    addToast('initallizing Template!', 'info', 3000);
 
-    console.log(textElements);
-    const templateData = {
-      name: templateName.trim(),
-      description: templateDescription.trim(),
-      // imageUrl: image.src,
-      textElements,
-      tags: templateTags.split(",").map((t) => t.trim()).filter(Boolean),
-    };
-
-    if (templateToEdit) {
-      // Update existing template
-      TemplateService.updateTemplate(templateToEdit.id.toString(), templateData);
-      alert("Template updated successfully!");
-    } else {
-      const canvas = canvasRef.current;
+    const canvas = canvasRef.current;
       if (!canvas) return;
       const { background, edited } = await canvas.saveFiles();
       if (!background || !edited) return;
+
+    const templateData = {
+      name: templateName.trim(),
+      description: templateDescription.trim(),
+      imageUrl: image.src,
+      thumbnailUrl: image.src,
+      textElements,
+      tags: templateTags.split(",").map((t) => t.trim()).filter(Boolean),
+    };
+    let loadingToast = "0"
+    if (templateToEdit) {
+      loadingToast = addToast(`Updating Template: ${templateName.trim().substring(0, 10)}`, 'loading', 0);
+      // Update existing template
+      await TemplateService.updateTemplate(templateToEdit.id.toString(), templateData, edited);
+    } else {
+      loadingToast = addToast(`Creating Template: ${templateName.trim().substring(0, 10)}`, 'loading', 0);
       await TemplateService.saveTemplate(templateData, background, edited);
-      addToast('Template saved successfully!', 'success', 3000);
-      removeToast(loadingToast, true);
-      // alert("Template saved successfully!");
-      
       // Reset form
       setImage(null);
       setTextElements([]);
@@ -154,7 +153,10 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
       setTemplateTags("");
       setSelectedElement(null);
       handleClear();
+      
     }
+    addToast('Template saved successfully!', 'success', 3000);
+    removeToast(loadingToast, true);    
   };
   // text-center
 
@@ -179,16 +181,22 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
             <div className="card-body">
               <h2 className="card-title">Design Area</h2>
 
-              {/* Image Upload */}
-              <div className="mb-4">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  accept="image/*"
-                  className="file-input file-input-bordered w-full"
-                />
-              </div>
+
+              { !templateToEdit && (
+                <>
+                  {/* Image Upload */}
+                  <div className="mb-4">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      accept="image/*"
+                      className="file-input file-input-bordered w-full"
+                    />
+                  </div>
+                </>
+              )}
+              
 
               {/* Canvas */}
               <div className="mb-4 flex justify-start">

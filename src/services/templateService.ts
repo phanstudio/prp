@@ -81,7 +81,7 @@ export default class TemplateService {
   static async updateTemplate(
     id: string, 
     updates: Partial<Template>,
-    file?: File,
+    // file?: File,
     file2?: File
   ): Promise<any> { // Template
     try {
@@ -92,23 +92,26 @@ export default class TemplateService {
       if (updates.description) formData.append('description', updates.description);
       if (updates.tags) formData.append('tag', updates.tags.join(", "));
       if (updates.textElements) {
-        formData.append('text_elements', JSON.stringify(updates.textElements));
+        formData.append('text_elements', JSON.stringify(humps.decamelizeKeys(updates.textElements)));
       }
+      if (updates.imageUrl) formData.append('image_url', updates.imageUrl);
+      if (updates.thumbnailUrl) formData.append('thumbnail_url', updates.thumbnailUrl);
       
       // Add files if provided
-      if (file) formData.append('file', file);
       if (file2) formData.append('file2', file2);
 
-      const response = await this.axios.put<any>(`/templates/${id}`, formData, {
+      // const response = 
+      await this.axios.put<any>(`/templates/${id}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      const data = humps.camelizeKeys(response.data);
-      return {
-        ...data,
-        createdAt: new Date(data.createdAt)
-      };
+      // const data = humps.camelizeKeys(response.data);
+      // return {
+      //   ...data,
+      //   createdAt: new Date(data.createdAt)
+      // };
+      return
     } catch (error) {
       console.error('Failed to update template:', error);
       throw error;
