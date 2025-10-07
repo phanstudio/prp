@@ -2,8 +2,9 @@ import React from "react";
 import Footer from "../components/main/footer";
 import Header from "../components/main/header";
 // import Banner from "../components/main/banner";
-import { Outlet, useNavigate, Link } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import Navbar from "../components/main/adminHeader";
 
 export const RegularLayout: React.FC = () => {
   const { isAuthenticated, user, logout, isAdmin } = useAuth();
@@ -53,21 +54,7 @@ export const AdminLayout: React.FC = () => {
 
   return (
     <div>
-      <header className="lg:px-20 navbar bg-base-100 shadow-md">
-        <div className="navbar-start">
-          <Link to="/admin" className="text-xl font-bold">Admin Panel</Link>
-        </div>
-        <div className="navbar-center">
-          <ul className="menu menu-horizontal px-1">
-            <li><Link to={"/"}>Gallery</Link></li>
-            <li><Link to={"/admin/creator"}>Create Template</Link></li>
-          </ul>
-        </div>
-        <div className="navbar-end">
-          <span className="mr-4">Admin: <span className="text-accent">{user?.username}</span></span>
-          <button onClick={handleLogout}>Logout</button>
-        </div>
-      </header>
+      <Navbar onLogout={handleLogout} username={user?.username ?? undefined}  />
       <main>
         <Outlet />
       </main>

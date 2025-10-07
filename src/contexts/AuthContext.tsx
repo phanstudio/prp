@@ -10,6 +10,11 @@ interface User {
   is_superuser: boolean;
 }
 
+interface RegisterResult {
+  success: boolean;
+  autoLoginFailed?: boolean;
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -18,6 +23,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<boolean>;
+  register: (email: string, password: string, username?: string) => Promise<RegisterResult>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,6 +59,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initAuth();
   }, []);
+
+  const register = async (email: string, password: string, username?: string): Promise<RegisterResult> => {
+    setIsLoading(true);
+    try {
+      const result = await authService.register(email, password, username);
+      
+      if (result.autoLoginSuccess) {
+        // Auto-login succeeded
+        setUser(result.user);
+        
+        // Log token expiration
+        const expiration = authService.getTokenExpiration();
+        if (expiration) {
+          console.log('Registered and logged in. Token expires at:', expiration.toLocaleString());
+        }
+        
+        return { success: true };
+      } else {
+        // Registration succeeded but auto-login failed
+        console.log('Registration succeeded, but auto-login failed. User needs to login manually.');
+        return { success: true, autoLoginFailed: true };
+      }
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -108,6 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         checkAuth,
+        register,
       }}
     >
       {children}

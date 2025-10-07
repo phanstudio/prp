@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
 import { TemplateCreatorRoute, GalleryRoute, MemeGeneratorRoute, MemeEditorRoute } from './utilities/router';
 import { RegularLayout, AdminLayout } from "./utilities/layouts";
 import './App.css';
@@ -19,10 +20,12 @@ const AppRoutes: React.FC = () => {
             <Routes>
               {/* Public login route */}
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
 
               {/* Regular user routes - no auth required for viewing */}
               <Route element={<RegularLayout />}>
                 <Route path="/" element={<GalleryRoute />} />
+                <Route path="/about" element={<GalleryRoute />} />
                 <Route path="/generator/:templateId" element={<MemeGeneratorRoute />} />
               </Route>
 

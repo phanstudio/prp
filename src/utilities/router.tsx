@@ -14,13 +14,11 @@ export const GalleryRoute: React.FC<GalleryRouteProps> = ({ isAdmin = false }) =
   const navigate = useNavigate();
 
   const handleSelectTemplate = (template: Template) => {
-    // sessionStorage.setItem("selectedTemplate", JSON.stringify(template));
     navigate(`/generator/${template.id}`);
   };
 
   const handleEditTemplate = (template: Template) => {
     if (!isAdmin) return;
-    // sessionStorage.setItem("selectedTemplate", JSON.stringify(template));
     navigate(`/admin/edit/${template.id}`);
   };
 

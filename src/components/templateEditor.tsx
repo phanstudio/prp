@@ -169,10 +169,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                       <div>
                         <label className="label-text text-xs">Outline Size</label>
                         <input
-                          type="range"
-                          min="0"
-                          max="30"
-                          className="range range-sm"
+                          type="range" min="0" max="30" className="range range-sm"
                           value={element.outlineSize}
                           onChange={(e) =>
                             updateSelectedText(

@@ -1,7 +1,7 @@
 // TextElementList.tsx
 import React from "react";
 import type { TextElement } from "../types";
-import TextEditor from "./texteditor";
+import TextEditor from "../memegen/texteditor";
 import { Bolt, Pencil } from "lucide-react";
 // import DropDown from "./dropdown";
 
@@ -53,31 +53,9 @@ const TextElementList: React.FC<TextElementListProps> = ({
           </div>
 
           <div 
-            className="dropdown menu w-65 card bg-base-200 p-3 max-w-80 border border-base-300 dropdown-end"
-            popover="auto" 
-            id={`popover-${element.id}`} 
-            style={{ 
-              positionAnchor: `--anchor-${element.id}`,
-              opacity: 0,
-              transition: 'opacity 0.15s ease-in',
-            } as React.CSSProperties}
-            onToggle={(e: any) => {
-              // Show the popover only after it's positioned
-              if (e.newState === 'open') {
-                requestAnimationFrame(() => {
-                  const popover = document.getElementById(`popover-${element.id}`);
-                  if (popover) {
-                    popover.style.opacity = '1';
-                  }
-                });
-              } else {
-                const popover = document.getElementById(`popover-${element.id}`);
-                if (popover) {
-                  popover.style.opacity = '0';
-                }
-              }
-            }}
-          >
+            className="dropdown menu w-52 rounded-box bg-base-100 shadow-sm"
+            popover="auto" id={`popover-${element.id}`} 
+            style={{ positionAnchor: `--anchor-${element.id}` } as React.CSSProperties }>
             <TextEditor
               element={element}
               onUpdate={(field, value) => onUpdate(element.id, field, value)}

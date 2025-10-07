@@ -1,5 +1,6 @@
 import React from "react";
 import type { TextElement } from "../types";
+import FontSelector from "../main/FontSelector";
 
 // Text Editor Component
 interface TextEditorProps {
@@ -19,58 +20,59 @@ const TextEditor: React.FC<TextEditorProps> = ({ element, onUpdate, onDelete }) 
 
   return (
     <div className="space-y-3 p-2">
-      {/* <div>
-        <label className="block text-sm font-medium mb-1">Text:</label>
-        <textarea
-          value={element.text}
-          onChange={(e) => onUpdate('text', e.target.value)}
-          className="w-full border rounded px-2 py-1 text-sm resize-none"
-          rows={2}
-          placeholder="Enter your text here..."
-        />
-      </div> */}
-      
       <div>
-        <label className="block text-sm font-medium mb-1">Font Size:</label>
-        <input
-          type="range"
-          min="12"
-          max="72"
-          value={element.fontSize}
-          onChange={(e) => onUpdate('fontSize', parseInt(e.target.value))}
-          className="w-full"
-        />
-        <div className="text-xs text-gray-500 text-center">
-          {element.fontSize}px
-        </div>
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium mb-1">Color:</label>
+        <label className="label-text text-xs">Color:</label>
         <input
           type="color"
           value={element.color}
           onChange={(e) => onUpdate('color', e.target.value)}
-          className="w-full h-8 border rounded"
+          className="input input-xs input-bordered w-full h-8"
         />
       </div>
       
       <div>
-        <label className="block text-sm font-medium mb-1">Font:</label>
-        <select
-          value={element.fontFamily}
-          onChange={(e) => onUpdate('fontFamily', e.target.value)}
-          className="w-full border rounded px-2 py-1 text-sm"
-        >
-          <option value="Arial">Arial</option>
-          <option value="Times New Roman">Times New Roman</option>
-          <option value="Helvetica">Helvetica</option>
-          <option value="Georgia">Georgia</option>
-          <option value="Verdana">Verdana</option>
-          <option value="Impact">Impact</option>
-          <option value="Comic Sans MS">Comic Sans MS</option>
-        </select>
+        <label className="label-text text-xs">Font Size: {element.fontSize}px</label>
+        <input
+          type="range" min="12" max="100" className="range range-sm"
+          value={element.fontSize}
+          onChange={(e) =>
+            onUpdate(
+              "fontSize",
+              parseInt(e.target.value)
+            )
+          }
+        />
       </div>
+
+      <div>
+        <label className="label-text text-xs">Outline Color</label>
+        <input
+          type="color"
+          className="input input-xs input-bordered w-full h-8"
+          value={element.outlineColor}
+          onChange={(e) =>
+            onUpdate("outlineColor", e.target.value)
+          }
+        />
+      </div>
+
+      <div>
+        <label className="label-text text-xs">Outline Size ({element.outlineSize}px)</label>
+        <input
+          type="range" min="0" max="30" className="range range-sm"
+          value={element.outlineSize}
+          onChange={(e) =>
+            onUpdate(
+              "outlineSize",
+              parseInt(e.target.value)
+            )
+          }
+        />
+      </div>
+      <FontSelector
+        value={element.fontFamily}
+        onChange={(font) => onUpdate("fontFamily", font)}
+      />
       
       <button
         onClick={onDelete}

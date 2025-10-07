@@ -1,91 +1,104 @@
 // src/pages/LoginPage.tsx
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Lock, Mail } from "lucide-react";
 
 export const LoginPage: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
 
-  const from = (location.state as any)?.from?.pathname || '/';
+  // Check for message from registration
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the message from location state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
+    setSuccessMessage('');
 
+    setIsLoading(true);
     try {
-      await login(username, password);
-      navigate(from, { replace: true });
+      await login(email, password);
+      navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Login failed. Please try again.');
+      let errorMessage = "Registration failed. Please try again.";
+
+      if (err.response?.data?.detail) {
+        // Handle different detail formats
+        const detail = err.response.data.detail;
+        if (typeof detail === "string") {
+          errorMessage = detail;
+        } else if (Array.isArray(detail)) {
+          // FastAPI validation errors format
+          errorMessage = detail
+            .map((e: any) => e.msg || JSON.stringify(e))
+            .join(", ");
+        } else if (typeof detail === "object") {
+          errorMessage = JSON.stringify(detail);
+        }
+      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div style={{ 
-      maxWidth: '400px', 
-      margin: '100px auto', 
-      padding: '20px',
-      border: '1px solid #ccc',
-      borderRadius: '8px'
-    }}>
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="username" style={{ display: 'block', marginBottom: '5px' }}>
-            Username
+    <div className="max-w-md mx-auto mt-24 p-6 border border-base-300 card">
+      <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
+      
+      {successMessage && (
+        <div className="mb-4 text-green-700 bg-green-100 p-3 rounded-md">
+          {successMessage}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+          <label htmlFor="email" className="text-md font-meduim">Email</label>
+          <label className="input validator w-full">
+            <Mail className="w-4 h-4"/>
+            <input
+              type="email" required placeholder="mail@site.com"
+              id="email" value={email} onChange={(e) => setEmail(e.target.value)}
+            />
           </label>
-          <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            style={{ 
-              width: '100%', 
-              padding: '8px', 
-              borderRadius: '4px',
-              border: '1px solid #ccc'
-            }}
-          />
+          <div className="validator-hint hidden">Enter valid email address</div>
         </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="password" style={{ display: 'block', marginBottom: '5px' }}>
-            Password
+        <div>
+          <label htmlFor="password" className="text-md font-meduim">Password</label>
+          <label className="input validator w-full">
+            <Lock className="w-4 h-4"/>
+            <input
+              type="password" required placeholder="0000000" minLength={6}
+              id="password" value={password} onChange={(e) => setPassword(e.target.value)}
+            />
           </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ 
-              width: '100%', 
-              padding: '8px', 
-              borderRadius: '4px',
-              border: '1px solid #ccc'
-            }}
-          />
+          <p className="validator-hint hidden">
+						Must be more than 6 characters
+            {/* , including */}
+						{/* <br/>At least one number
+						<br/>At least one lowercase letter
+						<br/>At least one uppercase letter */}
+					</p>
         </div>
 
         {error && (
-          <div style={{ 
-            color: 'red', 
-            marginBottom: '15px',
-            padding: '10px',
-            backgroundColor: '#ffebee',
-            borderRadius: '4px'
-          }}>
+          <div className="text-red-700 bg-red-100 p-3 rounded-md">
             {error}
           </div>
         )}
@@ -93,20 +106,23 @@ export const LoginPage: React.FC = () => {
         <button
           type="submit"
           disabled={isLoading}
-          style={{ 
-            width: '100%', 
-            padding: '10px',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.6 : 1
-          }}
+          className={`w-full btn
+            ${
+              isLoading ? "opacity-60 cursor-not-allowed" : "hover:bg-accent"
+            }`}
         >
-          {isLoading ? 'Logging in...' : 'Login'}
+          {isLoading ? <span className="loading loading-dots loading-md text-primary"/> : 'Login'}
         </button>
       </form>
+
+      <div className="mt-4 text-center">
+        <p className="text-base-content/50">
+          Don't have an account?{' '}
+          <Link to={"/register"} className="text-accent link link-hover">
+            Register here
+          </Link>
+        </p>
+      </div>
     </div>
   );
 };

@@ -33,8 +33,9 @@ export const MemeGenerator: React.FC<{ template: Template}> = ({ template }) => 
       color: "#ffffff",
       fontFamily: "Arial",
       rotation: 0,
+      outlineColor: "#000000",
+      outlineSize: 1,
     };
-
     setTextElements([...textElements, newElement]);
     setSelectedElement(newElement.id);
   };

@@ -6,7 +6,7 @@ interface HeaderProps {
   username?: string;
   onLogout: () => void;
 }
-// make responsive
+
 const Header: React.FC<HeaderProps> = ({ isAuthenticated, isAdmin, username, onLogout }) => {
   return (
     <header className="fixed top-0 left-0 right-0 z-40">
@@ -33,6 +33,16 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, isAdmin, username, onL
               {isAdmin &&(
                 <li><Link to={"/admin"}>Admin</Link></li>
               )}
+              {isAuthenticated ? (
+                <>
+                  <button className="btn btn-sm" onClick={onLogout}>Logout</button>
+                </>
+              ) : (
+                <div className="gap-1 flex flex-col items-center">
+                  <Link to={"/login"} className="btn w-full btn-sm">Login</Link>
+                  <Link to={"/register"} className="btn w-full btn-primary btn-sm">Get started - it's free</Link>
+                </div>
+              )}
             </ul>
           </div>
           <Link to={"/"} className="btn btn-ghost text-xl">PostRugPhotos</Link>
@@ -48,14 +58,17 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, isAdmin, username, onL
           </ul>
         </div>
 
-        <div className="navbar-end">
+        <div className="navbar-end hidden lg:flex">
           {isAuthenticated ? (
             <>
               <span className="mr-2">Welcome, {username}</span>
               <button className="btn" onClick={onLogout}>Logout</button>
             </>
           ) : (
-            <Link to={"/login"} className="btn">Login</Link>
+            <div className="space-x-2">
+              <Link to={"/login"} className="btn">Login</Link>
+              <Link to={"/register"} className="btn btn-primary">Get started - it's free</Link>
+            </div>
           )}
         </div>
       </nav>

@@ -25,7 +25,6 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
 
   const fetchTemplates = async () => {
     const data = await TemplateService.getTemplates();
-    console.log(data)
     setTemplates(data); // updates context + sessionStorage
   };
 
