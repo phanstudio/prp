@@ -42,62 +42,6 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      {/* Template Info */}
-      <div className="card bg-base-100 shadow-sm">
-        <div className="card-body">
-          <h3 className="font-semibold mb-4">Template Information</h3>
-
-          <div className="space-y-4">
-            <div>
-              <label className="label">
-                <span className="label-text">Template Name *</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Enter template name"
-                className="input input-bordered w-full"
-                value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="label">
-                <span className="label-text">Description</span>
-              </label>
-              <textarea
-                placeholder="Template description (optional)"
-                className="textarea textarea-bordered w-full"
-                rows={3}
-                value={templateDescription}
-                onChange={(e) => setTemplateDescription(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="label">
-                <span className="label-text">Tags</span>
-              </label>
-              <input
-                type="text"
-                placeholder="funny, reaction, meme (comma separated)"
-                className="input input-bordered w-full"
-                value={templateTags}
-                onChange={(e) => setTemplateTags(e.target.value)}
-              />
-            </div>
-          </div>
-          {toEdit && (
-            <button
-              onClick={resetToTemplate}
-              className="btn btn-base w-full mb-4"
-            >
-              Reset
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Text Controls */}
       <div className="card bg-base-100 shadow-sm">
         <div className="card-body">
@@ -229,6 +173,62 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
               <br />
               Add some text boxes to create your template.
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Template Info */}
+      <div className="card bg-base-100 shadow-sm">
+        <div className="card-body">
+          <h3 className="font-semibold mb-4">Template Information</h3>
+
+          <div className="space-y-4">
+            <div>
+              <label className="label">
+                <span className="label-text">Template Name *</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Enter template name"
+                className="input input-bordered w-full"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="label">
+                <span className="label-text">Description</span>
+              </label>
+              <textarea
+                placeholder="Template description (optional)"
+                className="textarea textarea-bordered w-full"
+                rows={3}
+                value={templateDescription}
+                onChange={(e) => setTemplateDescription(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="label">
+                <span className="label-text">Tags</span>
+              </label>
+              <input
+                type="text"
+                placeholder="funny, reaction, meme (comma separated)"
+                className="input input-bordered w-full"
+                value={templateTags}
+                onChange={(e) => setTemplateTags(e.target.value)}
+              />
+            </div>
+          </div>
+          {toEdit && (
+            <button
+              onClick={resetToTemplate}
+              className="btn btn-base w-full mb-4"
+            >
+              Reset
+            </button>
           )}
         </div>
       </div>
