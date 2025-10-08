@@ -1,4 +1,4 @@
-import type { TextElement } from "../../types";
+import type { TextElement, WatermarkOptions } from "../../types";
 
 export class CanvasRenderer {
   private canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -264,7 +264,37 @@ export class CanvasRenderer {
     ctx.restore();
   }
 
-  redraw(image: HTMLImageElement | null, textElements: TextElement[], selectedElement: string | null) {
+  private drawWatermark(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, options: WatermarkOptions) {
+    const { image, placement = "bottom-right", opacity = 0.5, scale = 0.15 } = options;
+  
+    const wmWidth = canvas.width * scale;
+    const aspect = image.width / image.height;
+    const wmHeight = wmWidth / aspect;
+  
+    let x = 0, y = 0;
+    const padding = 10;
+  
+    switch (placement) {
+      case "top-left": x = padding; y = padding; break;
+      case "top-right": x = canvas.width - wmWidth - padding; y = padding; break;
+      case "bottom-left": x = padding; y = canvas.height - wmHeight - padding; break;
+      case "bottom-right": x = canvas.width - wmWidth - padding; y = canvas.height - wmHeight - padding; break;
+      case "center": x = (canvas.width - wmWidth) / 2; y = (canvas.height - wmHeight) / 2; break;
+    }
+  
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.drawImage(image, x, y, wmWidth, wmHeight);
+    ctx.restore();
+  }
+  
+
+  redraw(
+    image: HTMLImageElement | null,
+    textElements: TextElement[],
+    selectedElement: string | null,
+    watermark?: WatermarkOptions
+  ) {
     const canvas = this.canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -278,11 +308,13 @@ export class CanvasRenderer {
     // Draw text elements
     textElements.forEach((element) => {
       this.drawTextElement(ctx, element, selectedElement === element.id);
-      
       // Draw rotation handle for selected element (outside of rotation transform)
-      if (selectedElement === element.id) {
-        this.drawRotationHandle(ctx, element);
-      }
+      if (selectedElement === element.id) {this.drawRotationHandle(ctx, element);}
     });
-  }
+
+    // watermark
+    if (watermark?.image) {
+      this.drawWatermark(ctx, canvas, watermark);
+    };
+  }  
 }

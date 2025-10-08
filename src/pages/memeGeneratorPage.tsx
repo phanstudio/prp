@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
-import type { TextElement, Template } from "../components/types";
+import type { TextElement, Template, WatermarkOptions } from "../components/types";
 import TextPanel from "../components/memegen/textpanel";
-import Faq from "../components/memegen/faq";
+import Faq from "../components/main/faq";
 import Canvas, { type CanvasHandle } from "../components/memegen/canvas";
 import { toTitleCase } from "../utilities/utils";
 
@@ -15,6 +15,21 @@ export const MemeGenerator: React.FC<{ template: Template}> = ({ template }) => 
   );
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const canvasRef = useRef<CanvasHandle>(null);
+
+  const [watermark, setWatermark] = useState<WatermarkOptions | undefined>(undefined);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = "/logo.jpg"; // from /public /logo.png
+    img.onload = () => {
+      setWatermark({
+        image: img,
+        placement: "bottom-right",
+        opacity: 0.6,
+        scale: 0.2,
+      });
+    };
+  }, []);
 
   useEffect(() => {
     const img = new Image();
@@ -111,6 +126,8 @@ export const MemeGenerator: React.FC<{ template: Template}> = ({ template }) => 
                     )
                   );
                 }}
+                watermark={watermark}
+                watermarkMode="download-only"
               />
             </div>
           </div>

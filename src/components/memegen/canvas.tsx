@@ -4,7 +4,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import type { TextElement } from "../types";
+import type { TextElement, WatermarkOptions, WatermarkMode } from "../types";
 import { CanvasRenderer } from "./canvasElem/CanvasRenderer";
 import { useCanvasInteractions } from "./canvasElem/useCanvasInteractions";
 
@@ -23,10 +23,12 @@ interface CanvasProps {
   onElementSelect: (id: string | null) => void;
   onElementMove: (id: string, x: number, y: number) => void;
   onElementRotate: (id: string, rotation: number) => void;
+  watermark?: WatermarkOptions;
+  watermarkMode?: WatermarkMode;
 }
 
 const Canvas = forwardRef<CanvasHandle, CanvasProps>(
-  ({ image, textElements, selectedElement, onElementSelect, onElementMove, onElementRotate }, ref) => {
+  ({ image, textElements, selectedElement, onElementSelect, onElementMove, onElementRotate, watermark, watermarkMode }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null!);
     const rendererRef = useRef<CanvasRenderer | null>(null);
     
@@ -54,19 +56,17 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(
       }
     }, []);
 
-    // Handle canvas sizing and drawing
     useEffect(() => {
       const canvas = canvasRef.current;
       if (!canvas || !rendererRef.current) return;
-      
-      // Set canvas size
+    
       if (image) {
         const maxWidth = 800;
         const maxHeight = 600;
         let width = image.width;
         let height = image.height;
         const aspect = width / height;
-
+    
         if (width > maxWidth) {
           width = maxWidth;
           height = Math.round(maxWidth / aspect);
@@ -75,25 +75,30 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(
           height = maxHeight;
           width = Math.round(maxHeight * aspect);
         }
-
+    
         canvas.width = width;
         canvas.height = height;
       } else {
         canvas.width = 800;
         canvas.height = 600;
       }
-
-      // Always redraw after any change
-      rendererRef.current.redraw(image, textElements, selectedElement);
-    }, [image, textElements, selectedElement]);
+      const wm = watermarkMode === "always" ? watermark : undefined;
+      rendererRef.current.redraw(image, textElements, selectedElement, wm);
+    
+    }, [image, textElements, selectedElement, watermark]);
+    
 
     const getCanvasFile = async (): Promise<File | null> => {
       const canvas = canvasRef.current;
-      if (!canvas) return null;
+      if (!canvas || !rendererRef.current) return null;
       onElementSelect(null);
     
       return new Promise((resolve, reject) => {
         setTimeout(() => {
+          // redraw with watermark if needed
+          const wm = watermark && watermarkMode !== "none" ? watermark : undefined;
+          rendererRef.current?.redraw(image, textElements, null, wm);
+    
           canvas.toBlob((blob) => {
             if (blob) {
               const file = new File([blob], "edited-photo.png", { type: blob.type });
@@ -101,8 +106,13 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(
             } else {
               reject(new Error("Failed to generate file"));
             }
+
+            // 🔥 if download-only → redraw again without watermark
+            if (watermarkMode === "download-only") {
+              rendererRef.current?.redraw(image, textElements, selectedElement, undefined);
+            }
           }, "image/png");
-        }), 5
+        }, 5);
       });
     };
     
@@ -123,20 +133,28 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(
       const edited = await getCanvasFile();
     
       return { background, edited };
-    };    
-
-    // --- save logic (exposed to parent) ---
+    };   
+    
     const saveImage = () => {
-      onElementSelect(null); // might increase the wait time or take it to some where else
+      onElementSelect(null);
       setTimeout(() => {
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!canvas || !rendererRef.current) return;
+    
+        const wm = watermark && watermarkMode !== "none" ? watermark : undefined;
+        rendererRef.current?.redraw(image, textElements, null, wm);
     
         const link = document.createElement("a");
         link.download = "edited-photo.png";
         link.href = canvas.toDataURL();
         link.click();
-      }, 5); // wait 5ms
+
+        // 🔥 restore after download if mode = download-only
+        if (watermarkMode === "download-only") {
+          rendererRef.current?.redraw(image, textElements, selectedElement, undefined);
+        }
+
+      }, 5);
     };
 
     useImperativeHandle(ref, () => ({

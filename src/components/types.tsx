@@ -34,3 +34,12 @@ export interface TemplateIn {
   tag?: string;
   thumbnail_url:string;
 }
+
+export interface WatermarkOptions {
+  image: HTMLImageElement;
+  placement?: "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
+  opacity?: number; // 0–1
+  scale?: number;   // relative width, e.g. 0.15 = 15% of canvas width
+}
+
+export type WatermarkMode = "download-only" | "always" | "none";
