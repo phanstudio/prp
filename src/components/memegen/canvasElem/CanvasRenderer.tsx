@@ -109,13 +109,6 @@ export class CanvasRenderer {
     return { x: worldX, y: worldY };
   }
 
-  // // Helper function to check if click is on rotation handle
-  // isClickOnRotationHandle(x: number, y: number, element: TextElement, ctx: CanvasRenderingContext2D) {
-  //   const handle = this.getRotationHandlePosition(element, ctx);
-  //   const distance = Math.sqrt(Math.pow(x - handle.x, 2) + Math.pow(y - handle.y, 2));
-  //   return distance <= 10; // 10px radius for handle
-  // }
-
   private drawImage(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, image: HTMLImageElement | null) {
     if (!image) return;
 
@@ -270,7 +263,6 @@ export class CanvasRenderer {
 
     ctx.restore();
   }
-
 
   redraw(image: HTMLImageElement | null, textElements: TextElement[], selectedElement: string | null) {
     const canvas = this.canvasRef.current;

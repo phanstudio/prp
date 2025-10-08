@@ -84,22 +84,6 @@ export const useCanvasInteractions = ({
     return { localX, localY, centerX, centerY };
   };
 
-  // Helper function to check if coordinates are within element bounds
-  // const isWithinElementBounds = (localX: number, localY: number, element: TextElement, ctx: CanvasRenderingContext2D) => {
-  //   ctx.font = `${element.fontSize}px ${element.fontFamily}`;
-  //   const metrics = ctx.measureText(element.text);
-  //   const textWidth = element.text.trim() === "" ? 100 : metrics.width;
-  //   const textHeight = element.fontSize;
-  //   const padding = 8;
-
-  //   return (
-  //     localX >= element.x - padding &&
-  //     localX <= element.x + textWidth + padding &&
-  //     localY >= element.y - padding &&
-  //     localY <= element.y + textHeight + padding
-  //   );
-  // };
-
   // Generic interaction handler that works for both mouse and touch
   const handleInteractionStart = useCallback((x: number, y: number) => {
     const canvas = canvasRef.current;
@@ -117,16 +101,6 @@ export const useCanvasInteractions = ({
       if (element) {
         const { centerX, centerY } = transformCoordinatesForRotation(x, y, element, ctx);
         
-        // if (renderer.isClickOnRotationHandle(localX, localY, element, ctx)) {
-        //   clickedOnRotationHandle = true;
-        //   setIsRotating(true);
-          
-        //   // Calculate initial angle using original coordinates
-        //   const initialAngle = Math.atan2(y - centerY, x - centerX);
-        //   const currentRotation = degreesToRadians(element.rotation || 0);
-        //   setRotationStartAngle(initialAngle - currentRotation);
-        //   return;
-        // }
         if (renderer.isClickOnRotationHandle(x, y, element, ctx)) {
           clickedOnRotationHandle = true;
           setIsRotating(true);
@@ -141,12 +115,6 @@ export const useCanvasInteractions = ({
 
     // Check if we clicked on any text element
     for (const element of [...textElements].reverse()) {
-      // const { localX, localY } = transformCoordinatesForRotation(x, y, element, ctx);
-
-      // if (isWithinElementBounds(localX, localY, element, ctx)) {
-      //   clickedElement = element.id;
-      //   break;
-      // }
       if (renderer.isPointInRotatedRect(x, y, element, ctx)) {
         clickedElement = element.id;
         break;
@@ -164,48 +132,6 @@ export const useCanvasInteractions = ({
       onElementSelect(null);
     }
   }, [canvasRef, textElements, selectedElement, onElementSelect, renderer]);
-
-  // Generic interaction move handler
-  // const handleInteractionMove = useCallback((x: number, y: number) => {
-  //   const canvas = canvasRef.current;
-  //   if (!canvas) return;
-
-  //   if (isDragging && selectedElement) {
-  //     const newX = x - dragOffset.x;
-  //     const newY = y - dragOffset.y;
-  //     onElementMove(selectedElement, newX, newY);
-  //   } else if (isRotating && selectedElement) {
-  //     const element = textElements.find((el) => el.id === selectedElement);
-  //     if (element) {
-  //       const ctx = canvas.getContext("2d");
-  //       if (ctx) {
-  //         const { centerX, centerY } = transformCoordinatesForRotation(x, y, element, ctx);
-          
-  //         // Calculate angle from center to point, accounting for initial offset
-  //         const currentAngle = Math.atan2(y - centerY, x - centerX);
-  //         const rotation = ((currentAngle - rotationStartAngle) * 180) / Math.PI;
-  //         onElementRotate(selectedElement, rotation);
-  //       }
-  //     }
-  //   }
-
-  //   // Update cursor based on hover state (only for mouse, not touch)
-  //   if (selectedElement && !isDragging && !isRotating && renderer) {
-  //     const element = textElements.find((el) => el.id === selectedElement);
-  //     if (element) {
-  //       const ctx = canvas.getContext("2d");
-  //       if (ctx) {
-  //         // const { localX, localY } = transformCoordinatesForRotation(x, y, element, ctx);
-          
-  //         if (renderer.isClickOnRotationHandle(x, y, element, ctx)) {
-  //           canvas.style.cursor = 'grabbing';
-  //         } else {
-  //           canvas.style.cursor = 'pointer';
-  //         }
-  //       }
-  //     }
-  //   }
-  // }, [isDragging, isRotating, selectedElement, textElements, dragOffset, rotationStartAngle, onElementMove, onElementRotate, renderer, canvasRef]);
 
   const handleInteractionMove = useCallback((x: number, y: number) => {
     const canvas = canvasRef.current;
@@ -264,10 +190,6 @@ export const useCanvasInteractions = ({
   const handleInteractionEnd = useCallback(() => {
     setIsDragging(false);
     setIsRotating(false);
-    // const canvas = canvasRef.current;
-    // if (canvas) {
-    //   canvas.style.cursor = 'pointer';
-    // }
   }, [canvasRef]);
 
   // Mouse event handlers
