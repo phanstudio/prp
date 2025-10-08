@@ -10,6 +10,7 @@ export interface TextElement {
   rotation: number;
   outlineColor?: string;
   outlineSize?: number;
+  textAlign?: 'left' | 'center' | 'right';
 }
 
 export interface Template {
