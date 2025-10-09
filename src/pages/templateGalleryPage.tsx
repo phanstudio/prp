@@ -1,6 +1,7 @@
 // TemplateGallery.tsx
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Search, Edit2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Plus, Trash2, Search, Edit2, X } from "lucide-react";
 import type { Template } from "../components/types";
 import TemplateService from "../services/templateService";
 import { useTemplates } from "../contexts/TemplateContext";
@@ -18,8 +19,10 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   onEditTemplate,
   isAdmin = false,
 }) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeSearchTerm, setActiveSearchTerm] = useState(""); // The search term being used for filtering
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlSearchTerm = searchParams.get("q") || "";
+  
+  const [searchTerm, setSearchTerm] = useState(urlSearchTerm);
   const [selectedTag, setSelectedTag] = useState<string>("");
 
   const { templates, appendTemplatesPaginated, clearTemplates } = useTemplates();
@@ -28,27 +31,65 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 12; // adjust as needed
+  
+  // loading states
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
-  const fetchTemplates = async (pageNum: number, search: string = activeSearchTerm) => {
-    const data = await TemplateService.getTemplates(search, (pageNum - 1) * pageSize, pageSize);
-    if (data.length < pageSize) {
-      setHasMore(false); // no more pages
-    } else {
-      setHasMore(true); // there might be more pages
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [_, setDeleteError] = useState<string | null>(null); //deleteError
+
+
+  const fetchTemplates = async (pageNum: number, search: string = urlSearchTerm) => {
+    try {
+      setSearchError(null);
+      const data = await TemplateService.getTemplates(search, (pageNum - 1) * pageSize, pageSize);
+      
+      if (data.length < pageSize) {
+        setHasMore(false); // ✅ This hides "Load More"
+      } else {
+        setHasMore(true);
+      }
+      
+      appendTemplatesPaginated(data);
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      setSearchError('Failed to load templates. Please try again.');
+      setHasMore(false);
     }
-    appendTemplatesPaginated(data); // add to context + storage
   };
 
-  const performSearch = () => {
+  const performSearch = async () => {
+    const trimmedSearch = searchTerm.trim();
+    
+    // Update URL with search query
+    if (trimmedSearch) {
+      setSearchParams({ q: trimmedSearch });
+    } else {
+      setSearchParams({});
+    }
+    
     // Reset pagination and fetch from beginning
-    setActiveSearchTerm(searchTerm);
     setPage(1);
     setHasMore(true);
-    clearTemplates?.(); // Clear existing templates if this function exists
-    fetchTemplates(1, searchTerm);
+    clearTemplates(); // Clear existing templates
+    setIsSearching(true);
+    await fetchTemplates(1, trimmedSearch);
+    setIsSearching(false);
   };
-
-  // add a clear button
+  // page number gets reset but not the content
+  const clearSearch = async () => {
+    setSearchTerm("");
+    setSearchParams({}); // Remove query param from URL
+    setPage(1);
+    setHasMore(true);
+    clearTemplates();
+    setIsSearching(true);
+    await fetchTemplates(1, "");
+    setIsSearching(false);
+  };
 
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -56,25 +97,35 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
     }
   };
 
+  // Sync search input with URL on mount and when URL changes
   useEffect(() => {
-    // load first page
-    if (templates.length === 0) {
-      fetchTemplates(1);
-    }
+    setSearchTerm(urlSearchTerm);
+  }, [urlSearchTerm]);
+
+  // Initial load based on URL search param
+  useEffect(() => {
+    const initialLoad = async () => {
+      if (templates.length === 0) {
+        setIsInitialLoading(true);
+        await fetchTemplates(1, urlSearchTerm);
+        setIsInitialLoading(false);
+      }
+    };
+    initialLoad();
   }, []);
 
-  // Watch for changes in searchTerm to restore "Load More" if it was hidden
   useEffect(() => {
-    if (searchTerm !== activeSearchTerm && !hasMore) {
-      // Search input changed and Load More was hidden - bring it back
-      setHasMore(true);
+    if (templates.length > 0) {
+      setPage(Math.ceil(templates.length / pageSize));
     }
-  }, [searchTerm, activeSearchTerm]);
+  }, [templates]);  
 
-  const loadMore = () => {
+  const loadMore = async () => {
     const nextPage = page + 1;
-    fetchTemplates(nextPage);
+    setIsLoadingMore(true);
+    await fetchTemplates(nextPage);
     setPage(nextPage);
+    setIsLoadingMore(false);
   };
 
   const ensureTemplateId = (template: Partial<Template>): Template => {
@@ -91,9 +142,9 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
     .map((t) => ensureTemplateId(t))
     .filter((template) => {
       const matchesSearch =
-        template.name.toLowerCase().includes(activeSearchTerm.toLowerCase()) ||
+        template.name.toLowerCase().includes(urlSearchTerm.toLowerCase()) ||
         (template.description &&
-          template.description.toLowerCase().includes(activeSearchTerm.toLowerCase()));
+          template.description.toLowerCase().includes(urlSearchTerm.toLowerCase()));
       const matchesTag =
         !selectedTag || (template.tags && template.tags.includes(selectedTag));
 
@@ -107,17 +158,54 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
     event: React.MouseEvent
   ) => {
     event.stopPropagation();
-    if (confirm("Are you sure you want to delete this template?")) {
+    if (!confirm("Are you sure you want to delete this template?")) return;
+  
+    setDeleteError(null);
+    setDeletingIds((prev) => new Set(prev).add(templateId));
+  
+    try {
       await TemplateService.deleteTemplate(templateId);
+  
       // reload from first page
+      // way to metigate t multi select delete
       setPage(1);
       setHasMore(true);
-      fetchTemplates(1);
+      clearTemplates();
+      setIsSearching(true);
+      await fetchTemplates(1, urlSearchTerm);
+      setIsSearching(false);
+    } catch (err) {
+      console.error("Failed to delete template:", err);
+      setDeleteError("Failed to delete template. Please try again.");
+    } finally {
+      setDeletingIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(templateId);
+        return newSet;
+      });
     }
-  };
+  };  
 
   return (
     <div className="max-w-7xl mx-auto p-4">
+      {/* Full page loading overlay - only show when templates storage is empty */}
+      {isInitialLoading && templates.length === 0 && (
+        <div className="fixed inset-0 bg-base-100/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="flex flex-col items-center gap-4">
+            <span className="loading loading-spinner loading-lg"></span>
+            <p className="text-base-content/70">Loading templates...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Small loading indicator for searches when there's already content */}
+      {isSearching && templates.length > 0 && (
+        <div className="alert alert-info mb-4">
+          <span className="loading loading-spinner loading-sm"></span>
+          <span>Searching templates...</span>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-3xl font-bold">Meme Templates</h1>
         {isAdmin && (
@@ -138,18 +226,34 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                 <input
                   type="text"
                   placeholder="Search templates..."
-                  className="input input-bordered w-full pl-10"
+                  className="input input-bordered w-full pl-10 pr-10"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={handleSearchKeyPress}
+                  disabled={isSearching}
                 />
+                {searchTerm && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/50 hover:text-base-content"
+                    aria-label="Clear search"
+                    disabled={isSearching}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
               <button 
                 onClick={performSearch} 
                 className="btn btn-primary"
                 aria-label="Search"
+                disabled={isSearching}
               >
-                <Search className="w-4 h-4" />
+                {isSearching ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
               </button>
             </div>
 
@@ -168,23 +272,71 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
               </select>
             </div>
           </div>
+          
+          {/* Active search indicator */}
+          {urlSearchTerm && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-sm text-base-content/70">
+                Searching for: <span className="font-semibold">{urlSearchTerm}</span>
+              </span>
+              <button
+                onClick={clearSearch}
+                className="btn btn-ghost btn-xs"
+                disabled={isSearching}
+              >
+                Clear
+              </button>
+            </div>
+          )}
+          
+          {/* Error message */}
+          {searchError && (
+            <div className="alert alert-error mt-2">
+              <span>{searchError}</span>
+              <button
+                onClick={() => {
+                  setSearchError(null);
+                  performSearch();
+                }}
+                className="btn btn-sm btn-ghost"
+              >
+                Retry
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Templates Grid */}
-      {filteredTemplates.length === 0 ? (
+      {filteredTemplates.length === 0 && !isInitialLoading && !isSearching ? (
         <div className="text-center py-12">
           <div className="text-base-content/60 mb-4">
-            {templates.length === 0
-              ? "No templates created yet."
-              : "No templates match your search."}
+            {searchError ? (
+              "Failed to load templates."
+            ) : templates.length === 0 ? (
+              urlSearchTerm 
+                ? `No templates found for "${urlSearchTerm}"`
+                : "No templates created yet."
+            ) : (
+              "No templates match your search."
+            )}
           </div>
-          {isAdmin && templates.length === 0 && (
+          {urlSearchTerm && !searchError && (
+            <button onClick={clearSearch} className="btn btn-outline">
+              Clear Search
+            </button>
+          )}
+          {isAdmin && templates.length === 0 && !urlSearchTerm && !searchError && (
             <button onClick={onCreateTemplate} className="btn btn-primary">
               <Plus className="w-4 h-4" />
               Create Your First Template
             </button>
           )}
+        </div>
+      ) : isSearching && templates.length === 0 ? (
+        <div className="text-center py-12">
+          <span className="loading loading-spinner loading-lg"></span>
+          <p className="text-base-content/70 mt-4">Searching templates...</p>
         </div>
       ) : (
         <>
@@ -208,10 +360,16 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                           e.stopPropagation();
                           deleteTemplate(template.id.toString(), e);
                         }}
-                        className="btn btn-sm btn-circle btn-error join-item"
+                        className="btn btn-sm btn-circle btn-error join-item disabled:!bg-neutral disabled:!opacity-80"
+                        disabled={deletingIds.has(template.id.toString())}
                       >
-                        <Trash2 className="w-3 h-3" />
+                        {deletingIds.has(template.id.toString()) ? (
+                          <span className="loading loading-spinner loading-xs text-error"/>
+                        ) : (
+                          <Trash2 className="w-3 h-3" />
+                        )}
                       </button>
+
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -257,8 +415,19 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
           {/* Pagination button */}
           {hasMore && (
             <div className="flex justify-center mt-6">
-              <button onClick={loadMore} className="btn btn-outline">
-                Load More
+              <button 
+                onClick={loadMore} 
+                className={`btn ${!isLoadingMore ? "btn-outline": "btn-ghost"}`}
+                disabled={isLoadingMore}
+              >
+                {isLoadingMore ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm text-accent"/>
+                    Loading...
+                  </>
+                ) : (
+                  'Load More'
+                )}
               </button>
             </div>
           )}
