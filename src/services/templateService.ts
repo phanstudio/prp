@@ -25,6 +25,27 @@ export default class TemplateService {
       throw error;
     }
   }
+  // Fetch single template by ID
+  static async getTemplateById(id: number): Promise<Template | null> {
+    try {
+      const response = await this.axios.get<Template>(`/templates/${id}`);
+      const data: any = humps.camelizeKeys(response.data);
+
+      return {
+        ...data,
+        createdAt: new Date(data.createdAt),
+        textElements: (data.textElements || []).map((el: any) => ({
+          ...el,
+        })),
+      };
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        return null; // not found
+      }
+      console.error(`Failed to fetch template ${id}:`, error);
+      throw error;
+    }
+  }
 
   // Create template with files
   static async saveTemplate(

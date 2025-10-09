@@ -4,7 +4,9 @@ import { MemeGenerator } from "../pages/memeGeneratorPage";
 import type { Template } from "../components/types";
 import { TemplateCreator } from "../pages/templateCreatorPage";
 import { TemplateGallery } from "../pages/templateGalleryPage";
-import { useTemplates } from "../contexts/TemplateContext";
+// import { useTemplates } from "../contexts/TemplateContext";
+import { useTemplateResolver } from "../hooks/useTemplateResolver";
+import { useImagePreloader } from "../hooks/useImagePreloader";
 
 interface GalleryRouteProps {
   isAdmin?: boolean;
@@ -48,31 +50,33 @@ export const TemplateCreatorRoute: React.FC = () => {
   return <TemplateCreator onBack={handleBack} />;
 };
 
-// Meme Generator Route Component
-export const MemeEditorRoute: React.FC = () => {
-  const navigate = useNavigate();
+// Meme Generator Route
+export const MemeGeneratorRoute: React.FC = () => {
   const { templateId } = useParams<{ templateId: string }>();
-  const [template, setTemplate] = useState<Template | null>(null);
-  const { templates } = useTemplates();
-  
-  useEffect(() => {
-    if (templateId && templates.length > 0) {
-      const id = Number(templateId);
-      // Fallback: get from stored templates
-      const foundTemplate = templates.find((t) => t.id === id);
-      if (foundTemplate) {
-        setTemplate(foundTemplate);
-      } else {
-        navigate("/admin", { replace: true });
-      }
-    }
-  }, [templateId, templates, navigate]);
+  const template = useTemplateResolver(templateId, "/");
+  const imgLoaded = useImagePreloader(template?.imageUrl, "/");
 
-  const handleBack = () => {
-    navigate("/admin");
-  };
+  if (!template || !imgLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="loading loading-spinner loading-lg"></div>
+      </div>
+    );
+  }
 
-  if (!template) {
+  return <MemeGenerator template={template} />;
+};
+
+// Meme Editor Route
+export const MemeEditorRoute: React.FC = () => {
+  const { templateId } = useParams<{ templateId: string }>();
+  const template = useTemplateResolver(templateId, "/admin");
+  const imgLoaded = useImagePreloader(template?.imageUrl, "/admin");
+  const navigate = useNavigate();
+
+  const handleBack = () => navigate("/admin");
+
+  if (!template || !imgLoaded) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
         <div className="loading loading-spinner loading-lg"></div>
@@ -80,31 +84,5 @@ export const MemeEditorRoute: React.FC = () => {
     );
   }
 
-  return <TemplateCreator onBack={handleBack} templateToEdit={template}/>;
-};
-
-// add a nav bar to go to the libary and the collections
-export const MemeGeneratorRoute: React.FC = () => {
-  const navigate = useNavigate();
-  const { templateId } = useParams<{ templateId: string }>();
-  const { templates } = useTemplates();
-  const [template, setTemplate] = useState<Template | null>(null);
-
-  useEffect(() => {
-    if (templateId && templates.length > 0) {
-      const id = Number(templateId);
-      const found = templates.find(t => t.id === id);
-      if (found) {
-        setTemplate(found);
-      } else {
-        navigate("/", { replace: true });
-      }
-    }
-  }, [templateId, templates, navigate]);
-
-  if (!template) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
-
-  return <MemeGenerator template={template} />;
+  return <TemplateCreator onBack={handleBack} templateToEdit={template} />;
 };

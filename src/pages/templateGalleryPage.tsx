@@ -9,7 +9,7 @@ interface TemplateGalleryProps {
   onSelectTemplate: (template: Template) => void;
   onCreateTemplate: () => void;
   onEditTemplate: (template: Template) => void;
-  isAdmin?: boolean; // admin toggle
+  isAdmin?: boolean;
 }
 
 export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
@@ -18,61 +18,101 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   onEditTemplate,
   isAdmin = false,
 }) => {
-  // const [templates, setTemplates] = useState<Template[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeSearchTerm, setActiveSearchTerm] = useState(""); // The search term being used for filtering
   const [selectedTag, setSelectedTag] = useState<string>("");
-  const { templates, setTemplates } = useTemplates();
 
-  const fetchTemplates = async () => {
-    const data = await TemplateService.getTemplates();
-    setTemplates(data); // updates context + sessionStorage
+  const { templates, appendTemplatesPaginated, clearTemplates } = useTemplates();
+
+  // pagination state
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const pageSize = 12; // adjust as needed
+
+  const fetchTemplates = async (pageNum: number, search: string = activeSearchTerm) => {
+    const data = await TemplateService.getTemplates(search, (pageNum - 1) * pageSize, pageSize);
+    if (data.length < pageSize) {
+      setHasMore(false); // no more pages
+    } else {
+      setHasMore(true); // there might be more pages
+    }
+    appendTemplatesPaginated(data); // add to context + storage
   };
 
-  // useEffect(() => {
-  //   if (templates.length === 0) {
-  //     fetchTemplates();
-  //   }
-  // }, []);
+  const performSearch = () => {
+    // Reset pagination and fetch from beginning
+    setActiveSearchTerm(searchTerm);
+    setPage(1);
+    setHasMore(true);
+    clearTemplates?.(); // Clear existing templates if this function exists
+    fetchTemplates(1, searchTerm);
+  };
 
-  // const fetchTemplates = async () => {
-  //   const data = await TemplateService.getTemplates();
-  //   setTemplates(data);
-  // };
+  // add a clear button
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      performSearch();
+    }
+  };
 
   useEffect(() => {
-    fetchTemplates();
+    // load first page
+    if (templates.length === 0) {
+      fetchTemplates(1);
+    }
   }, []);
+
+  // Watch for changes in searchTerm to restore "Load More" if it was hidden
+  useEffect(() => {
+    if (searchTerm !== activeSearchTerm && !hasMore) {
+      // Search input changed and Load More was hidden - bring it back
+      setHasMore(true);
+    }
+  }, [searchTerm, activeSearchTerm]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    fetchTemplates(nextPage);
+    setPage(nextPage);
+  };
 
   const ensureTemplateId = (template: Partial<Template>): Template => {
     return {
       ...template,
-      id: template.id ?? (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`),
+      id:
+        template.id ??
+        (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`),
       textElements: template.textElements ?? [],
     } as Template;
   };
 
-
   const filteredTemplates = templates
-  .map(t => ensureTemplateId(t))
-  .filter((template) => {
-    const matchesSearch =
-      template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (template.description &&
-        template.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesTag =
-      !selectedTag || (template.tags && template.tags.includes(selectedTag));
+    .map((t) => ensureTemplateId(t))
+    .filter((template) => {
+      const matchesSearch =
+        template.name.toLowerCase().includes(activeSearchTerm.toLowerCase()) ||
+        (template.description &&
+          template.description.toLowerCase().includes(activeSearchTerm.toLowerCase()));
+      const matchesTag =
+        !selectedTag || (template.tags && template.tags.includes(selectedTag));
 
-    return matchesSearch && matchesTag;
-  });
+      return matchesSearch && matchesTag;
+    });
 
   const allTags = [...new Set(templates.flatMap((t) => t.tags || []))].sort();
 
-  const deleteTemplate = async (templateId: string, event: React.MouseEvent) => {
+  const deleteTemplate = async (
+    templateId: string,
+    event: React.MouseEvent
+  ) => {
     event.stopPropagation();
     if (confirm("Are you sure you want to delete this template?")) {
       await TemplateService.deleteTemplate(templateId);
-      // setTemplates(TemplateService.getTemplates());
-      fetchTemplates();
+      // reload from first page
+      setPage(1);
+      setHasMore(true);
+      fetchTemplates(1);
     }
   };
 
@@ -88,12 +128,12 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
         )}
       </div>
 
-      {/* Search and Filter */}
+      {/* Search + Filter */}
       <div className="card bg-base-100 shadow-sm mb-6">
         <div className="card-body">
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
+            <div className="flex-1 flex gap-2">
+              <div className="relative flex-1">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50" />
                 <input
                   type="text"
@@ -101,8 +141,16 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                   className="input input-bordered w-full pl-10"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={handleSearchKeyPress}
                 />
               </div>
+              <button 
+                onClick={performSearch} 
+                className="btn btn-primary"
+                aria-label="Search"
+              >
+                <Search className="w-4 h-4" />
+              </button>
             </div>
 
             <div className="sm:w-48">
@@ -139,71 +187,82 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredTemplates.map((template) => (
-            <div
-              key={template.id.toString()}
-              className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => onSelectTemplate(template)}
-            >
-              <figure className="relative">
-                <img
-                  src={template.thumbnailUrl}
-                  alt={template.name}
-                  className="w-full h-48 object-cover"
-                />
-                {isAdmin && (
-                  <div className="join absolute top-2 right-2 gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteTemplate(template.id.toString(), e);
-                      }}
-                      className="btn btn-sm btn-circle btn-error  join-item"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation(); // <— Prevents the card click
-                        onEditTemplate(template);
-                      }}
-                      className="btn btn-sm btn-circle btn-error join-item"
-                    >
-                      <Edit2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-              </figure>
-
-              <div className="card-body">
-                <h3 className="card-title text-sm">{template.name}</h3>
-                {template.description && (
-                  <p className="text-xs text-base-content/70 line-clamp-2">
-                    {template.description}
-                  </p>
-                )}
-
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {template.tags?.slice(0, 3).map((tag) => (
-                    <span key={tag} className="badge badge-sm badge-outline">
-                      {tag}
-                    </span>
-                  ))}
-                  {(template.tags?.length || 0) > 3 && (
-                    <span className="badge badge-sm badge-w">
-                      +{(template.tags?.length || 0) - 3}
-                    </span>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredTemplates.map((template) => (
+              <div
+                key={template.id.toString()}
+                className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => onSelectTemplate(template)}
+              >
+                <figure className="relative">
+                  <img
+                    src={template.thumbnailUrl}
+                    alt={template.name}
+                    className="w-full h-48 object-cover"
+                  />
+                  {isAdmin && (
+                    <div className="join absolute top-2 right-2 gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteTemplate(template.id.toString(), e);
+                        }}
+                        className="btn btn-sm btn-circle btn-error join-item"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditTemplate(template);
+                        }}
+                        className="btn btn-sm btn-circle btn-error join-item"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                      </button>
+                    </div>
                   )}
-                </div>
+                </figure>
 
-                <div className="text-xs text-base-content/50 mt-2">
-                  {template.textElements.length} text elements
+                <div className="card-body">
+                  <h3 className="card-title text-sm">{template.name}</h3>
+                  {template.description && (
+                    <p className="text-xs text-base-content/70 line-clamp-2">
+                      {template.description}
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {template.tags?.slice(0, 3).map((tag) => (
+                      <span key={tag} className="badge badge-sm badge-outline">
+                        {tag}
+                      </span>
+                    ))}
+                    {(template.tags?.length || 0) > 3 && (
+                      <span className="badge badge-sm badge-ghost">
+                        +{(template.tags?.length || 0) - 3}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="text-xs text-base-content/50 mt-2">
+                    {template.textElements.length} text elements
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {/* Pagination button */}
+          {hasMore && (
+            <div className="flex justify-center mt-6">
+              <button onClick={loadMore} className="btn btn-outline">
+                Load More
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

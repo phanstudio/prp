@@ -24,6 +24,7 @@ export const RegularLayout: React.FC = () => {
         onLogout={handleLogout}
       />
       <div className="flex-1 pt-16">
+        {/* use a .env to change the banner info and toggle it or admin stuff */}
         {/* <Banner
           messages={[
             "Welcome to the site — new features are live!",
