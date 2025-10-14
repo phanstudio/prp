@@ -1,28 +1,47 @@
 import React, { useRef, useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
-import type { TextElement, Template } from "../components/types";
+import type { Template } from "../components/types";
 import TemplateEditor from "../components/templateEditor";
-import Canvas, { type CanvasHandle } from "../components/memegen/canvas";
 import TemplateService from "../services/templateService";
 import { useToast } from '../services/ToastProvider';
+import { useFabric } from "../hooks/usecase/use-fabric";
+import { useTemplateInfo } from "../hooks/useTemplateInfo"
+import { serializeTextElements } from "../utilities/serializeTextElement";
 
 interface TemplateCreatorProps {
   onBack: () => void;
-  templateToEdit?: Template; // Optional: if passed, we're editing
+  templateToEdit?: Template;
 }
-// # we need to add delete for this
+
 export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
   onBack,
   templateToEdit,
 }) => {
+  const {
+    canvasRef,
+    setBackgroundImage,
+    textElements,
+    selectedElement,
+    setSelectedElement,
+    addTextElement,
+    deleteSelectedElement,
+    loadTemplate,
+    saveFiles,
+    textManager
+  } = useFabric();
+
+  const {
+    templateName,
+    setTemplateName,
+    templateDescription,
+    setTemplateDescription,
+    templateTags,
+    setTemplateTags,
+    resetTemplateInfo,
+  } = useTemplateInfo();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
-  const [textElements, setTextElements] = useState<TextElement[]>([]);
-  const [selectedElement, setSelectedElement] = useState<string | null>(null);
-  const [templateName, setTemplateName] = useState("");
-  const [templateDescription, setTemplateDescription] = useState("");
-  const [templateTags, setTemplateTags] = useState("");
-  const canvasRef = useRef<CanvasHandle>(null);
   const { addToast, removeToast } = useToast();
 
   // Load existing template if editing
@@ -33,132 +52,114 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
     setTemplateDescription(templateToEdit.description || "");
     setTemplateTags((templateToEdit.tags || []).join(", "));
 
-    setTextElements(
-      templateToEdit.textElements.map((el) => ({
-        ...el,
-        id: Date.now().toString() + Math.random(), // unique id for Canvas
-      }))
-    );
+    // Load template into fabric canvas
+    loadTemplate({ textElements: templateToEdit.textElements });
 
+    // Load background image
     const img = new Image();
-    img.onload = () => setImage(img);
-    img.crossOrigin = "anonymous"; // 👈 Important
+    img.onload = async () => {
+      setImage(img);
+      await setBackgroundImage(templateToEdit.imageUrl);
+    };
+    // img.crossOrigin = "anonymous"; // check later
     img.src = templateToEdit.imageUrl;
   }, [templateToEdit]);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (event) => {
+      const imageUrl = event.target?.result as string;
+      await setBackgroundImage(imageUrl);
+      
       const img = new Image();
+      img.src = imageUrl;
       img.onload = () => setImage(img);
-      img.src = e.target?.result as string;
     };
     reader.readAsDataURL(file);
   };
 
-  const addText = () => {
-    const newElement: TextElement = {
-      id: Date.now().toString(),
-      text: "New Text",
-      x: 50,
-      y: 50 + textElements.length * 40,
-      fontSize: 24,
-      color: "#ffffff",
-      fontFamily: "Arial",
-      rotation: 0,
-      outlineColor: "#000000",
-      outlineSize: 1,
-    };
-    setTextElements([...textElements, newElement]);
-    setSelectedElement(newElement.id);
-  };
-
-  const updateSelectedText = (
-    field: keyof TextElement,
-    value: string | number
-  ) => {
-    if (!selectedElement) return;
-
-    setTextElements((prev) =>
-      prev.map((el) => (el.id === selectedElement ? { ...el, [field]: value } : el))
-    );
-  };
-
-  const moveElement = (id: string, x: number, y: number) => {
-    setTextElements((prev) =>
-      prev.map((el) => (el.id === id ? { ...el, x, y } : el))
-    );
-  };
-
   const handleClear = () => {
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // clears the file input
+      fileInputRef.current.value = "";
     }
   };
 
-  const deleteSelectedElement = () => {
-    if (!selectedElement) return;
-    setTextElements((prev) => prev.filter((el) => el.id !== selectedElement));
-    setSelectedElement(null);
-  };
-
-  const resetToTemplate = () => {
+  const resetToTemplate = () => { // might not work with names a desc
     if (!templateToEdit) return;
-
-    setTextElements(
-      templateToEdit.textElements.map((el) => ({
-        ...el,
-        id: Date.now().toString() + Math.random(),
-      }))
-    );
+    // setTemplateName(templateToEdit.name); if i want to reste name desc and tags
+    loadTemplate({ textElements: templateToEdit.textElements });
     setSelectedElement(null);
   };
 
   const saveTemplate = async () => {
     if (!image || !templateName.trim()) {
-      alert("Please provide an image and template name");
+      addToast("Please provide an image and template name", "error", 3000);
       return;
     }
-    addToast('initallizing Template!', 'info', 3000);
+    const initToast = addToast('Initializing Template!', 'info', 0);
 
-    const canvas = canvasRef.current;
-      if (!canvas) return;
-      const { background, edited } = await canvas.saveFiles();
-      if (!background || !edited) return;
+    // Save files (background and edited version)
+    const {background, edited} = await saveFiles();
+    if (!background || !edited) {
+      removeToast(initToast, true);
+      addToast("Failed to save template files", "error", 3000);
+      return;
+    }
+
+    const currentTextElements = textManager.getAllTextElements();
 
     const templateData = {
       name: templateName.trim(),
       description: templateDescription.trim(),
       imageUrl: image.src,
       thumbnailUrl: image.src,
-      textElements,
+      textElements: serializeTextElements(currentTextElements),
       tags: templateTags.split(",").map((t) => t.trim()).filter(Boolean),
     };
-    let loadingToast = "0"
-    if (templateToEdit) {
-      loadingToast = addToast(`Updating Template: ${templateName.trim().substring(0, 10)}`, 'loading', 0);
-      // Update existing template
-      await TemplateService.updateTemplate(templateToEdit.id.toString(), templateData, edited);
-    } else {
-      loadingToast = addToast(`Creating Template: ${templateName.trim().substring(0, 10)}`, 'loading', 0);
-      await TemplateService.saveTemplate(templateData, background, edited);
-      // Reset form
-      setImage(null);
-      setTextElements([]);
-      setTemplateName("");
-      setTemplateDescription("");
-      setTemplateTags("");
-      setSelectedElement(null);
-      handleClear();
+
+    let loadingToast = "0";
+
+    // console.log(templateData);
+    
+    try {
+      removeToast(initToast, true);
+      if (templateToEdit) {
+        loadingToast = addToast(
+          `Updating Template: ${templateName.trim().substring(0, 10)}`,
+          'loading',
+          0
+        );
+        await TemplateService.updateTemplate(
+          templateToEdit.id.toString(),
+          templateData,
+          edited
+        );
+      } else {
+        loadingToast = addToast(
+          `Creating Template: ${templateName.trim().substring(0, 10)}`,
+          'loading',
+          0
+        );
+        await TemplateService.saveTemplate(templateData, background, edited);
+        
+        // Reset form for new template
+        setImage(null);
+        resetTemplateInfo();
+        setSelectedElement(null);
+        handleClear();
+      }
       
+      addToast('Template saved successfully!', 'success', 3000);
+      removeToast(loadingToast, true);
+    } catch (error) {
+      removeToast(loadingToast, true);
+      addToast('Failed to save template', 'error', 3000);
+      console.error("Error saving template:", error);
     }
-    addToast('Template saved successfully!', 'success', 3000);
-    removeToast(loadingToast, true);    
   };
-  // text-center
 
   return (
     <div className="max-w-7xl mx-auto p-4">
@@ -168,11 +169,10 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
           <ArrowLeft className="w-4 h-4" />
           Back to Gallery
         </button>
-        <h1 className="text-3xl font-bold flex-1 ">
+        <h1 className="text-3xl font-bold flex-1">
           {templateToEdit ? "Edit Template" : "Create Template"}
         </h1>
       </div>
-      {/* <div className="divider"></div> */}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Canvas Area */}
@@ -181,62 +181,52 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
             <div className="card-body">
               <h2 className="card-title">Design Area</h2>
 
-
-              { !templateToEdit && (
-                <>
-                  {/* Image Upload */}
-                  <div className="mb-4">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleImageUpload}
-                      accept="image/*"
-                      className="file-input file-input-bordered w-full"
-                    />
-                  </div>
-                </>
+              {!templateToEdit && (
+                <div className="mb-4">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    className="file-input file-input-bordered w-full"
+                  />
+                </div>
               )}
-              
 
               {/* Canvas */}
               <div className="mb-4 flex justify-start">
-                <Canvas
-                  image={image}
-                  textElements={textElements}
-                  selectedElement={selectedElement}
-                  onElementSelect={setSelectedElement}
-                  onElementMove={moveElement}
-                  ref={canvasRef}
-                  onElementRotate={(id, rotation) =>
-                    setTextElements((prev) =>
-                      prev.map((el) => (el.id === id ? { ...el, rotation } : el))
-                    )
-                  }
-                />
+                <canvas ref={canvasRef} />
               </div>
             </div>
           </div>
         </div>
+
         {/* Controls */}
         <TemplateEditor
-          templateName={templateName}
-          setTemplateName={setTemplateName}
-          templateDescription={templateDescription}
-          setTemplateDescription={setTemplateDescription}
-          templateTags={templateTags}
-          setTemplateTags={setTemplateTags}
+          templateInfo={{
+            templateName,
+            setTemplateName,
+            templateDescription,
+            setTemplateDescription,
+            templateTags,
+            setTemplateTags,
+            resetTemplateInfo,
+          }}
           textElements={textElements}
           selectedElement={selectedElement}
           setSelectedElement={setSelectedElement}
-          addText={addText}
-          updateSelectedText={updateSelectedText}
+          addText={addTextElement}
+
+          textManager={textManager}
           deleteSelectedElement={deleteSelectedElement}
           saveTemplate={saveTemplate}
           resetToTemplate={resetToTemplate}
-          toEdit={(templateToEdit !== null && templateToEdit !== undefined)}
-          image={image}
+          toEdit={templateToEdit !== null && templateToEdit !== undefined}
+          image={image} // the only use is to check if the kmage exsist change to a boolean
         />
       </div>
     </div>
   );
 };
+
+export default TemplateCreator;

@@ -1,16 +1,35 @@
 // Types
+export type TextAlignType = "left" | "center" | "right" | "justify"
+export type FontStyleType = "normal" | "italic" | "oblique"
+export type TextEffectType = "none" | "shadow" | "outline"
+
 export interface TextElement {
   id: string;
   text: string;
-  x: number;
-  y: number;
+  x: number; //left
+  y: number; // top
   fontSize: number;
-  color: string;
+  color: string; // fill?: string
   fontFamily: string;
   rotation: number;
-  outlineColor?: string;
-  outlineSize?: number;
-  textAlign?: 'left' | 'center' | 'right';
+  outlineColor?: string; // strokeColor?: string
+  outlineSize?: number; // strokeWidth?: number
+  
+  textAlign?: TextAlignType
+  fontWeight?: string | number
+  fontStyle?: FontStyleType
+  underline?: boolean
+  linethrough?: boolean
+  effectType?: TextEffectType
+  // Shadow properties
+  shadowColor?: string
+  shadowBlur?: number
+  shadowOffsetX?: number
+  shadowOffsetY?: number
+  shadowOpacity?: number
+
+  width:number;
+  height:number;
 }
 
 export interface Template {
@@ -36,10 +55,25 @@ export interface TemplateIn {
 }
 
 export interface WatermarkOptions {
-  image: HTMLImageElement;
+  text: string;
   placement?: "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
   opacity?: number; // 0–1
-  scale?: number;   // relative width, e.g. 0.15 = 15% of canvas width
+  scale?: number;   // relative font size, e.g. 0.05 = 5% of canvas width
+  font?: string;    // e.g. "Arial"
+  color?: string;   // e.g. "rgba(255,255,255,0.7)"
 }
 
 export type WatermarkMode = "download-only" | "always" | "none";
+
+export const DefualtTextSettings = {
+  fontFamily: "Imapact",
+  textColor: "#ffffff",
+  fontSize: 24,
+  shadowColor: "#000000",
+  outlineStrokeWidth: 1,
+  outlineStrokeColor: "#000000",
+  shadowOpacity: 0.75,
+  shadowBlur: 10,
+  shadowOffsetX: -1,// 5
+  shadowOffsetY: 1,// 5
+}

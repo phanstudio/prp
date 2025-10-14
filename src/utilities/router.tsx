@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MemeGenerator } from "../pages/memeGeneratorPage";
 import type { Template } from "../components/types";

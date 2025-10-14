@@ -1,45 +1,67 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Edit3, Trash2, Download } from "lucide-react";
-import type { TextElement } from "./types";
+import type { TextProperties, TextManager } from "../hooks/usecase/text-manager";
 import FontSelector from "./main/FontSelector";
+import { useTemplateInfo } from "../hooks/useTemplateInfo"
+import { TextEffectsPanel } from "./TextEffectsPanel";
+import { DefualtTextSettings } from "./types";
 
 interface TemplateEditorProps {
-  templateName: string;
-  setTemplateName: (name: string) => void;
-  templateDescription: string;
-  setTemplateDescription: (desc: string) => void;
-  templateTags: string;
-  setTemplateTags: (tags: string) => void;
-  textElements: TextElement[];
+  templateInfo: ReturnType<typeof useTemplateInfo>;
+  textElements: any[]; // From fabric canvas
   selectedElement: string | null;
   setSelectedElement: (id: string | null) => void;
   addText: () => void;
-  updateSelectedText: (field: keyof TextElement, value: any) => void;
+  textManager: TextManager;
   deleteSelectedElement: () => void;
   saveTemplate: () => void;
   image?: HTMLImageElement | null;
   resetToTemplate: () => void;
-  toEdit: boolean; // can merge and jsut nvaldate above instead of here
+  toEdit: boolean;
 }
 
 const TemplateEditor: React.FC<TemplateEditorProps> = ({
-  templateName,
-  setTemplateName,
-  templateDescription,
-  setTemplateDescription,
-  templateTags,
-  setTemplateTags,
+  templateInfo,
   textElements,
   selectedElement,
   setSelectedElement,
   addText,
-  updateSelectedText,
+  textManager,
   deleteSelectedElement,
   saveTemplate,
   image,
   resetToTemplate,
   toEdit,
 }) => {
+  const [currentTextProps, setCurrentTextProps] = useState<TextProperties | null>(null);
+
+  // Update current properties when selection changes
+  useEffect(() => {
+    if (selectedElement) {
+      const props = textManager.getSelectedTextProperties();
+      setCurrentTextProps(props);
+    } else {
+      setCurrentTextProps(null);
+    }
+  }, [selectedElement, textManager]);
+
+  const updateProperty = (updates: Partial<TextProperties>) => {
+    if (!currentTextProps) return;
+    
+    const newProps = { ...currentTextProps, ...updates };
+    setCurrentTextProps(newProps);
+    textManager.updateSelectedText(updates);
+  };
+
+  const {
+    templateName,
+    setTemplateName,
+    templateDescription,
+    setTemplateDescription,
+    templateTags,
+    setTemplateTags,
+  } = templateInfo;
+
   return (
     <div className="space-y-6">
       {/* Text Controls */}
@@ -54,117 +76,160 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
           {/* Text Elements List */}
           <div className="space-y-2 max-h-96 overflow-y-auto">
-            {textElements.map((element, index) => (
-              <div
-                key={element.id}
-                className={`p-3 rounded border ${
-                  selectedElement === element.id
-                    ? "border-primary bg-primary/10"
-                    : "border-base-300"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium">Text {index + 1}</span>
-                  <button
-                    onClick={() =>
-                      setSelectedElement(
-                        selectedElement === element.id ? null : element.id
-                      )
-                    }
-                    className="btn btn-xs btn-ghost"
-                  >
-                    <Edit3 className="w-3 h-3" />
-                  </button>
-                </div>
-
-                <textarea
-                  placeholder="Enter your meme text..."
-                  className="textarea textarea-sm textarea-bordered w-full mb-2 min-h-20"
-                  value={element.text}
-                  onChange={(e) => {
-                    setSelectedElement(element.id);
-                    updateSelectedText("text", e.target.value);
-                  }}
-                  onFocus={() => setSelectedElement(element.id)}
-                />
-
-                {selectedElement === element.id && (
-                  <div className="space-y-2 pt-2 border-t border-base-300">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="label-text text-xs">Font Size</label>
-                        <input
-                          type="range"
-                          min="12"
-                          max="100"
-                          className="range range-sm"
-                          value={element.fontSize}
-                          onChange={(e) =>
-                            updateSelectedText(
-                              "fontSize",
-                              parseInt(e.target.value)
-                            )
-                          }
-                        />
-                        <div className="text-xs text-center">
-                          {element.fontSize}px
-                        </div>
-                      </div>
-                      <div>
-                        <label className="label-text text-xs">Outline Size</label>
-                        <input
-                          type="range" min="0" max="30" className="range range-sm"
-                          value={element.outlineSize}
-                          onChange={(e) =>
-                            updateSelectedText(
-                              "outlineSize",
-                              parseInt(e.target.value)
-                            )
-                          }
-                        />
-                        <div className="text-xs text-center">
-                          {element.outlineSize}px
-                        </div>
-                      </div>
-                      <div>
-                        <label className="label-text text-xs">Color</label>
-                        <input
-                          type="color"
-                          className="input input-xs input-bordered w-full h-8"
-                          value={element.color}
-                          onChange={(e) =>
-                            updateSelectedText("color", e.target.value)
-                          }
-                        />
-                      </div>
-                      <div>
-                        <label className="label-text text-xs">Outline Color</label>
-                        <input
-                          type="color"
-                          className="input input-xs input-bordered w-full h-8"
-                          value={element.outlineColor}
-                          onChange={(e) =>
-                            updateSelectedText("outlineColor", e.target.value)
-                          }
-                        />
-                      </div>
-                    </div>
-                    <FontSelector
-                      value={element.fontFamily}
-                      onChange={(font) => updateSelectedText("fontFamily", font)}
-                    />
-
+            {textElements.map((element, index) => {
+              const isSelected = selectedElement === element.id;
+              
+              return (
+                <div
+                  key={element.id}
+                  className={`p-3 rounded border ${
+                    isSelected
+                      ? "border-primary bg-primary/10"
+                      : "border-base-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-medium">Text {index + 1}</span>
                     <button
-                      onClick={deleteSelectedElement}
-                      className="btn btn-xs btn-error w-full"
+                      onClick={() =>
+                        setSelectedElement(isSelected ? null : element.id)
+                      }
+                      className="btn btn-xs btn-ghost"
                     >
-                      <Trash2 className="w-3 h-3" />
-                      Delete Element
+                      <Edit3 className="w-3 h-3" />
                     </button>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  <textarea
+                    placeholder="Enter your meme text..."
+                    className="textarea textarea-sm textarea-bordered w-full mb-2 min-h-20"
+                    value={isSelected ? currentTextProps?.text || "" : element.text || ""}
+                    onChange={(e) => {
+                      setSelectedElement(element.id);
+                      updateProperty({ text: e.target.value });
+                    }}
+                    onFocus={() => setSelectedElement(element.id)}
+                  />
+
+                  {isSelected && currentTextProps && (
+                    <div className="space-y-3 pt-2 border-t border-base-300">
+                      {/* Font Settings */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="label-text text-xs">Max Font Size</label>
+                          <input
+                            type="range"
+                            min="12"
+                            max="100"
+                            className="range range-sm"
+                            value={currentTextProps.maxFontSize || DefualtTextSettings.fontSize}
+                            onChange={(e) =>
+                              updateProperty({ maxFontSize: parseInt(e.target.value) })
+                            }
+                          />
+                          <div className="text-xs text-center">
+                            {currentTextProps.maxFontSize}px
+                          </div>
+                        </div>
+                        <div>
+                          <label className="label-text text-xs">Text Color</label>
+                          <input
+                            type="color"
+                            className="input input-xs input-bordered w-full h-8"
+                            value={currentTextProps.fill || DefualtTextSettings.textColor}
+                            onChange={(e) =>
+                              updateProperty({ fill: e.target.value })
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <FontSelector
+                        value={currentTextProps.fontFamily || DefualtTextSettings.fontFamily}
+                        onChange={(font) => updateProperty({ fontFamily: font })}
+                      />
+
+                      {/* Text Style */}
+                      <div>
+                        <label className="label-text text-xs mb-1 block">Text Style</label>
+                        <div className="flex gap-2">
+                          <button
+                            className={`btn btn-xs ${currentTextProps.fontWeight === "bold" ? "btn-primary" : "btn-ghost"}`}
+                            onClick={() => 
+                              updateProperty({ fontWeight: currentTextProps.fontWeight === "bold" ? "normal" : "bold" })
+                            }
+                          >
+                            <strong>B</strong>
+                          </button>
+                          <button
+                            className={`btn btn-xs ${currentTextProps.fontStyle === "italic" ? "btn-primary" : "btn-ghost"}`}
+                            onClick={() => 
+                              updateProperty({ fontStyle: currentTextProps.fontStyle === "italic" ? "normal" : "italic" })
+                            }
+                          >
+                            <em>I</em>
+                          </button>
+                          <button
+                            className={`btn btn-xs ${currentTextProps.underline ? "btn-primary" : "btn-ghost"}`}
+                            onClick={() => 
+                              updateProperty({ underline: !currentTextProps.underline })
+                            }
+                          >
+                            <u>U</u>
+                          </button>
+                          {/* TODO: Add linethrough support - uncomment when ready */}
+                          {/* <button
+                            className={`btn btn-xs ${currentTextProps.linethrough ? "btn-primary" : "btn-ghost"}`}
+                            onClick={() => 
+                              updateProperty({ linethrough: !currentTextProps.linethrough })
+                            }
+                          >
+                            <s>S</s>
+                          </button> */}
+                        </div>
+                      </div>
+
+                      {/* Text Alignment use select instead */}
+                      <div>
+                        <label className="label-text text-xs mb-1 block">Alignment</label>
+                        <div className="flex gap-2">
+                          {(["left", "center", "right"] as const).map((align) => (
+                            <button
+                              key={align}
+                              className={`btn btn-xs ${currentTextProps.textAlign === align ? "btn-primary" : "btn-ghost"}`}
+                              onClick={() => updateProperty({ textAlign: align })}
+                            >
+                              {align[0].toUpperCase()}
+                            </button>
+                          ))}
+                          {/* TODO: Add justify support - uncomment when ready */}
+                          {/* <button
+                            className={`btn btn-xs ${currentTextProps.textAlign === "justify" ? "btn-primary" : "btn-ghost"}`}
+                            onClick={() => updateProperty({ textAlign: "justify" })}
+                          >
+                            J
+                          </button> */}
+                        </div>
+                      </div>
+
+                      {/* Text Effects */}
+                      <TextEffectsPanel
+                        currentTextProps={currentTextProps}
+                        updateProperty={updateProperty}
+                      />
+
+                      <button
+                        onClick={deleteSelectedElement}
+                        className="btn btn-xs btn-error w-full"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete Element
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {textElements.length === 0 && (

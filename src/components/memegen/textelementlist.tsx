@@ -4,22 +4,25 @@ import type { TextElement } from "../types";
 import TextEditor from "./texteditor";
 import { Bolt, Pencil } from "lucide-react";
 // import DropDown from "./dropdown";
+import type { TextProperties } from "../../hooks/usecase/text-manager";
 
 
 interface TextElementListProps {
   textElements: TextElement[];
   selectedElement: string | null;
-  onElementSelect: (id: string|null) => void;
-  onUpdate: (id: string, field: keyof TextElement, value: string | number) => void;
-  onDelete: (id: string) => void;
+  setSelectedElement: (id: string|null) => void;
+  updateProperty: (props: Partial<TextProperties>) => void;
+  deleteSelectedElement: () => void;
+  currentTextProps: TextProperties | null
 }
 
 const TextElementList: React.FC<TextElementListProps> = ({
   textElements,
   selectedElement,
-  onElementSelect,
-  onUpdate,
-  onDelete,
+  setSelectedElement,
+  updateProperty,
+  deleteSelectedElement,
+  currentTextProps
 }) => {
   return (
     <div className="space-y-2 max-h-60 overflow-y-auto p-2">
@@ -36,16 +39,19 @@ const TextElementList: React.FC<TextElementListProps> = ({
               <Pencil className="h-[1em] opacity-50"/>
               <input 
                 type="text" className="grow" value={element.text}
-                onChange={(e) => onUpdate(element.id, "text", e.target.value)}
+                onChange={(e) => {
+                  setSelectedElement(element.id);
+                  updateProperty({ text: e.target.value });
+                }}
                 placeholder={`Text ${index + 1}: Enter text...`} 
                 onFocus={() => {
-                  onElementSelect(element.id);
+                  setSelectedElement(element.id);
                 }}
               />
             </label>
             <button className="btn join-item" popoverTarget={`popover-${element.id}`} 
               style={{ anchorName: `--anchor-${element.id}` } as React.CSSProperties }
-              onClick={() => onElementSelect(element.id)}
+              onClick={() => setSelectedElement(element.id)}
               // onBlur={()=> onElementSelect(null)} // we can check if the blur is mutual then remove it.
             >
               <Bolt className="size-[1.2em]"/>
@@ -80,8 +86,9 @@ const TextElementList: React.FC<TextElementListProps> = ({
           >
             <TextEditor
               element={element}
-              onUpdate={(field, value) => onUpdate(element.id, field, value)}
-              onDelete={() => onDelete(element.id)}
+              currentTextProps={currentTextProps}
+              updateProperty={updateProperty}
+              onDelete={deleteSelectedElement}
             />
           </div>
           

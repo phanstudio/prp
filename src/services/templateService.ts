@@ -18,6 +18,7 @@ export default class TemplateService {
         createdAt: new Date(t.createdAt),
         textElements: (t.textElements || []).map((el: any) => ({
           ...el,
+          // maxFontSize: el.fontSize,
         })),
       }));
     } catch (error) {

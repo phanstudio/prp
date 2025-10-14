@@ -1,33 +1,52 @@
-import React from "react";
-import type { TextElement } from "../types";
 import TextElementList from "./textelementlist";
+import React, { useEffect, useState } from "react";
+import type { TextManager, TextProperties } from "../../hooks/usecase/text-manager";
 
-// Text Panel Component
 interface TextPanelProps {
-  textElements: TextElement[];
+  textManager: TextManager;
+  textElements: any[]; // from fabric
   selectedElement: string | null;
-  onAddText: () => void;
-  onElementSelect: (id: string | null) => void;
-  onUpdateElement: (field: keyof TextElement, value: string | number) => void;
-  onDeleteElement: () => void;
+  setSelectedElement: (id: string | null) => void;
+  addText: () => void;
+  deleteSelectedElement: () => void;
   onSave: () => void;
-  classname: string;
   onResetTemplate: () => void;
+  className?: string;
 }
 
 const TextPanel: React.FC<TextPanelProps> = ({
+  textManager,
   textElements,
   selectedElement,
-  onAddText,
-  onElementSelect,
-  onUpdateElement,
-  onDeleteElement,
+  setSelectedElement,
+  addText,
+  deleteSelectedElement,
   onSave,
-  classname,
   onResetTemplate,
+  className = "",
 }) => {
+  const [currentTextProps, setCurrentTextProps] = useState<TextProperties | null>(null);
+  
+  // Sync current text properties when selection changes
+  useEffect(() => {
+    if (selectedElement) {
+      const props = textManager.getSelectedTextProperties();
+      setCurrentTextProps(props);
+    } else {
+      setCurrentTextProps(null);
+    }
+  }, [selectedElement, textManager]);
+
+  // Update selected text through TextManager
+  const updateProperty = (updates: Partial<TextProperties>) => {
+    if (!currentTextProps) return;
+    const newProps = { ...currentTextProps, ...updates };
+    setCurrentTextProps(newProps);
+    textManager.updateSelectedText(updates);
+  };
+
   return (
-    <div className={classname}>
+    <div className={className}>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Text Elements</h2>
       </div>
@@ -36,23 +55,16 @@ const TextPanel: React.FC<TextPanelProps> = ({
       <TextElementList
         textElements={textElements}
         selectedElement={selectedElement}
-        onElementSelect={onElementSelect}
-        onUpdate={(id, field, value) => {
-          if (selectedElement === id) {
-            onUpdateElement(field, value);
-          }
-        }}
-        onDelete={(id) => {
-          if (selectedElement === id) {
-            onDeleteElement();
-          }
-        }}
+        setSelectedElement={setSelectedElement}
+        updateProperty={updateProperty}
+        deleteSelectedElement={deleteSelectedElement}
+        currentTextProps={currentTextProps}
       />
       
       <div className="flex flex-col sm:text-center text-left">
         <div className="join flex justify-between p-2">
           <button
-            onClick={onAddText}
+            onClick={addText}
             className="btn btn-neutral text-sm join-item flex-1"
           >
             Add text
