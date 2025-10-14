@@ -29,9 +29,9 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, isAdmin, username, onL
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
             >
               <li><Link to={"/"}>Home</Link></li>
-              <li><Link to={"#"}>About</Link></li>
+              {/* <li><Link to={"#"}>About</Link></li> */}
               {isAdmin &&(
-                <li><Link to={"/admin"}>Admin</Link></li>
+                <li><Link to={"/admin"} className="text-accent">Admin</Link></li>
               )}
               {isAuthenticated ? (
                 <>
@@ -51,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, isAdmin, username, onL
         <div className="navbar-center hidden lg:flex">
           <ul className="menu menu-horizontal px-1">
             <li><Link to={"/"}>Home</Link></li>
-            <li><Link to={"#"}>About</Link></li>
+            {/* <li><Link to={"#"}>About</Link></li> */}
             {isAdmin &&(
                 <li><Link to={"/admin"} className="text-accent">Admin</Link></li>
               )}

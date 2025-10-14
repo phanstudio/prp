@@ -138,7 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         isAuthenticated: !!user,
-        isAdmin: true,//user?.is_superuser ?? false,
+        isAdmin: user?.is_superuser ?? false,
         isLoading,
         login,
         logout,
