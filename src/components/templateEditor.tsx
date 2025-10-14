@@ -14,7 +14,7 @@ interface TemplateEditorProps {
   addText: () => void;
   textManager: TextManager;
   deleteSelectedElement: () => void;
-  saveTemplate: () => void;
+  saveTemplate: () => Promise<void>;
   image?: HTMLImageElement | null;
   resetToTemplate: () => void;
   toEdit: boolean;
@@ -34,6 +34,17 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
   toEdit,
 }) => {
   const [currentTextProps, setCurrentTextProps] = useState<TextProperties | null>(null);
+  const [isSaving, setIsSaving] = useState(false); // <-- new state
+
+  const handleSave = async () => {
+    if (!image || !templateName.trim()) return;
+    setIsSaving(true);
+    try {
+      await saveTemplate();
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Update current properties when selection changes
   useEffect(() => {
@@ -300,12 +311,12 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
       {/* Save Button */}
       <button
-        onClick={saveTemplate}
+        onClick={handleSave}
         className="btn btn-success w-full btn-lg"
-        disabled={!image || !templateName.trim()}
+        disabled={!image || !templateName.trim() || isSaving}
       >
         <Download className="w-5 h-5" />
-        Save Template
+        {isSaving ? "Saving..." : "Save Template"}
       </button>
     </div>
   );

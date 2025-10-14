@@ -190,13 +190,13 @@ export function useFabric(options?: UseFabricOptions) {
       evented: false,
     });
 
-    canvas.setDimensions({
-      width:img.width*scale,
-      height:img.height*scale,
-    })
+    // canvas.setDimensions({
+    //   width:img.width*scale,
+    //   height:img.height*scale,
+    // })
   
     canvas.backgroundImage = img;
-    // canvas.backgroundColor = "transparent";
+    canvas.backgroundColor = "transparent";
     canvas.renderAll();
   
     return canvas;
