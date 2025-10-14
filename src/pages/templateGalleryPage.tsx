@@ -109,6 +109,8 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
         setIsInitialLoading(true);
         await fetchTemplates(1, urlSearchTerm);
         setIsInitialLoading(false);
+      }else{
+        await fetchTemplates(1, urlSearchTerm);
       }
     };
     initialLoad();

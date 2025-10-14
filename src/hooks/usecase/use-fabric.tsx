@@ -6,11 +6,14 @@ import { WatermarkManager, type WatermarkConfig } from "./modules/use-watermark"
 import { enableTextboxHoverOutline } from "./modules/textbox-hover-outline"
 import { makeTextboxResizable } from "./modules/fixed-size-textbox"
 import { deserializeTextElement } from "../../utilities/deserializeTextElements";
+import { useWindow } from "./use-window"
 
 const CANVAS_DIMENSIONS = {
   default: 600,
   mobileMultiplier: 0.9,
 };
+
+const BASE_CANVAS_SIZE = CANVAS_DIMENSIONS.default;
 
 interface UseFabricOptions {
   watermarkConfig?: WatermarkConfig
@@ -23,10 +26,7 @@ export function useFabric(options?: UseFabricOptions) {
   
   const [textElements, setTextElements] = useState<any[]>([]);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
-  const [windowSize, setWindowSize] = useState({
-    width: typeof window !== "undefined" ? window.innerWidth : 1024,
-    height: typeof window !== "undefined" ? window.innerHeight : 768,
-  });
+  const { isMobile, windowSize } = useWindow()
 
   const fileGeneratorRef = useRef<CanvasFileGenerator | null>(null)
   const watermarkManagerRef = useRef<WatermarkManager | null>(null)
@@ -70,27 +70,50 @@ export function useFabric(options?: UseFabricOptions) {
       watermarkManagerRef.current
     )
     fileGeneratorRef.current = fileGenerator
-
-    // Handle window resize
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-
-    window.addEventListener("resize", handleResize);
     const cleanupOutline = enableTextboxHoverOutline(canvas)
 
     return () => {
       watermarkManagerRef.current?.dispose()
-      window.removeEventListener("resize", handleResize);
       textManagerRef.current.dispose();
       cleanupOutline()
       canvas.dispose();
     };
   }, []);
 
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (canvas) {
+      adjustCanvasSize(canvas, isMobile) // Adjust size on window resize
+      canvas.renderAll()
+    }
+  }, [isMobile, windowSize.width, windowSize.height])
+
+  function adjustCanvasSize(fabricCanvas: Canvas, isMobile: boolean) {
+    if (!windowSize.width || !windowSize.height) return;
+  
+    // Compute available space like before
+    const targetSize = isMobile
+      ? Math.min(
+          windowSize.width * CANVAS_DIMENSIONS.mobileMultiplier,
+          CANVAS_DIMENSIONS.default
+        )
+      : CANVAS_DIMENSIONS.default;
+  
+    // Compute zoom factor relative to base canvas size
+    const zoom = targetSize / BASE_CANVAS_SIZE;
+  
+    // Set zoom instead of scaling all objects
+    fabricCanvas.setZoom(zoom);
+  
+    // Resize the visible DOM element so it matches scaled view
+    fabricCanvas.setDimensions({
+      width: BASE_CANVAS_SIZE * zoom,
+      height: BASE_CANVAS_SIZE * zoom,
+    });
+  
+    fabricCanvas.renderAll();
+  }
+  
   // Update text elements list from canvas
   const updateTextElementsList = () => {
     const canvas = fabricCanvasRef.current;
@@ -106,63 +129,79 @@ export function useFabric(options?: UseFabricOptions) {
     );
   };
 
-  // Set background image
-  const setBackgroundImage = async (imageUrl: string): Promise<Canvas | null> => {
+  async function setBackgroundImage(imageUrl: string): Promise<Canvas | null> {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return null;
-
-    try {
-      const img = await FabricImage.fromURL(imageUrl, {
-        crossOrigin: "anonymous",
-      });
-
-      if (!img) {
-        alert("Failed to load image");
-        return null;
-      }
-
-      // Calculate dimensions
-      if (windowSize.width > 768) {
-        const imgWidth = (img.width! * CANVAS_DIMENSIONS.default) / img.height!;
-        canvas.setDimensions({
-          width: imgWidth,
-          height: CANVAS_DIMENSIONS.default,
-        });
-      } else {
-        const size = Math.min(
-          windowSize.width * CANVAS_DIMENSIONS.mobileMultiplier,
-          CANVAS_DIMENSIONS.default
-        );
-        canvas.setDimensions({ width: size, height: size });
-      }
-
-      const canvasWidth = canvas.width!;
-      const canvasHeight = canvas.height!;
-      const scaleX = canvasWidth / img.width!;
-      const scaleY = canvasHeight / img.height!;
-      const scale = Math.max(scaleX, scaleY);
-
-      img.scale(scale);
-      img.set({
-        originX: "center",
-        originY: "center",
-        left: canvasWidth / 2,
-        top: canvasHeight / 2,
-        objectCaching: false,
-        crossOrigin: "anonymous",
-      });
-
-      canvas.backgroundImage = img;
-      canvas.renderAll();
-
-      return canvas;
-    } catch (error) {
-      console.error("Error loading background image:", error);
-      alert("Failed to load image. Please check the URL or try a different image.");
+  
+    const img = await FabricImage.fromURL(imageUrl, { crossOrigin: "anonymous" });
+    if (!img) {
+      alert("Failed to load image");
       return null;
     }
-  };
+  
+    // Determine canvas max dimensions based on window size
+    let maxWidth: number, maxHeight: number;
+    if (windowSize.width! <= 640) {
+      maxWidth = Math.min(windowSize.width! - 32, 500);
+      maxHeight = maxWidth;
+    } else if (windowSize.width! <= 768) {
+      maxWidth = Math.min(windowSize.width! - 48, 600);
+      maxHeight = maxWidth;
+    } else if (windowSize.width! <= 1024) {
+      maxWidth = Math.min(windowSize.width! - 64, 700);
+      maxHeight = windowSize.height! - 350;
+    } else {
+      maxWidth = Math.min(windowSize.width! * 0.6 - 80, 800);
+      maxHeight = windowSize.height! - 300;
+    }
+  
+    // Maintain aspect ratio
+    let canvasWidth = maxWidth;
+    let canvasHeight = maxHeight;
+  
+    if (img.width! / img.height! > canvasWidth / canvasHeight) {
+      img.scaleToHeight(canvasHeight);
+    } else {
+      img.scaleToWidth(canvasWidth);
+    }    
+  
+    const canvasAspect = canvas.width! / canvas.height!;
+    const imgAspect = img.width! / img.height!;
 
+    let scale: number;
+
+    // Fit image entirely inside canvas
+    if (imgAspect > canvasAspect) {
+      // Image is wider than canvas → scale to fit width
+      scale = canvas.width! / img.width!;
+    } else {
+      // Image is taller → scale to fit height
+      scale = canvas.height! / img.height!;
+    }
+
+    img.set({
+      originX: "center",
+      originY: "center",
+      left: canvas.width! / 2,
+      top: canvas.height! / 2,
+      scaleX: scale,
+      scaleY: scale,
+      selectable: false,
+      evented: false,
+    });
+
+    canvas.setDimensions({
+      width:img.width*scale,
+      height:img.height*scale,
+    })
+  
+    canvas.backgroundImage = img;
+    // canvas.backgroundColor = "transparent";
+    canvas.renderAll();
+  
+    return canvas;
+  }
+  
   // Add text element
   const addTextElement = () => {
     const canvas = fabricCanvasRef.current;

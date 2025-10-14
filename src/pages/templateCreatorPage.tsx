@@ -194,8 +194,11 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
               )}
 
               {/* Canvas */}
-              <div className="mb-4 flex justify-start">
+              {/* <div className="mb-4 flex justify-start">
                 <canvas ref={canvasRef} />
+              </div> */}
+              <div className="mb-4 flex justify-center items-start w-full">
+                <canvas ref={canvasRef} className="block" />
               </div>
             </div>
           </div>

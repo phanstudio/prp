@@ -2,8 +2,7 @@
 import React from "react";
 import type { TextElement } from "../types";
 import TextEditor from "./texteditor";
-import { Bolt, Pencil } from "lucide-react";
-// import DropDown from "./dropdown";
+import { Bolt } from "lucide-react";
 import type { TextProperties } from "../../hooks/usecase/text-manager";
 
 
@@ -26,74 +25,89 @@ const TextElementList: React.FC<TextElementListProps> = ({
 }) => {
   return (
     <div className="space-y-2 max-h-60 overflow-y-auto p-2">
-      {textElements.map((element, index) => (
-        <div key={element.id}>
-          <div
-            className={`join cursor-pointer w-full ${
-              selectedElement === element.id
-                ? "text-primary font-semibold"
-                : "text-default"
-            }`}
-          >
-            <label className="input flex-1 join-item">
-              <Pencil className="h-[1em] opacity-50"/>
-              <input 
-                type="text" className="grow" value={element.text}
+      {textElements.map((element, index) => {
+        const isSelected = selectedElement === element.id;
+        return (
+          <div key={element.id}>
+            <div
+              className={`join cursor-pointer w-full ${
+                selectedElement === element.id
+                  ? "text-primary font-semibold"
+                  : "text-default"
+              }`}
+            >
+              {/* <label className="input flex-1 join-item">
+                <Pencil className="h-[1em] opacity-50"/>
+                <input 
+                  type="text" className="grow" value=
+                  {isSelected ? currentTextProps?.text || "" : element.text || ""}
+                  onChange={(e) => {
+                    setSelectedElement(element.id);
+                    updateProperty({ text: e.target.value });
+                  }}
+                  placeholder={`Text ${index + 1}: Enter text...`} 
+                  onFocus={() => {
+                    setSelectedElement(element.id);
+                  }}
+                />
+                
+              </label> */}
+              <textarea
+                placeholder={`Text ${index + 1}: Enter text...`}
+                className="textarea textarea-sm textarea-bordered w-full mb-2 min-h-10"
+                value={isSelected ? currentTextProps?.text || "" : element.text || ""}
                 onChange={(e) => {
                   setSelectedElement(element.id);
                   updateProperty({ text: e.target.value });
                 }}
-                placeholder={`Text ${index + 1}: Enter text...`} 
-                onFocus={() => {
-                  setSelectedElement(element.id);
-                }}
+                onFocus={() => setSelectedElement(element.id)}
               />
-            </label>
-            <button className="btn join-item" popoverTarget={`popover-${element.id}`} 
-              style={{ anchorName: `--anchor-${element.id}` } as React.CSSProperties }
-              onClick={() => setSelectedElement(element.id)}
-              // onBlur={()=> onElementSelect(null)} // we can check if the blur is mutual then remove it.
-            >
-              <Bolt className="size-[1.2em]"/>
-            </button>
-          </div>
+              <button className="btn join-item" popoverTarget={`popover-${element.id}`} 
+                style={{ anchorName: `--anchor-${element.id}` } as React.CSSProperties }
+                onClick={() => setSelectedElement(element.id)}
+                // onBlur={()=> onElementSelect(null)} // we can check if the blur is mutual then remove it.
+              >
+                <Bolt className="size-[1.2em]"/>
+              </button>
+            </div>
 
-          <div 
-            className="dropdown menu w-65 card bg-base-200 p-3 max-w-80 border border-base-300 dropdown-end"
-            popover="auto" 
-            id={`popover-${element.id}`} 
-            style={{ 
-              positionAnchor: `--anchor-${element.id}`,
-              opacity: 0,
-              transition: 'opacity 0.15s ease-in',
-            } as React.CSSProperties}
-            onToggle={(e: any) => {
-              // Show the popover only after it's positioned
-              if (e.newState === 'open') {
-                requestAnimationFrame(() => {
+            <div 
+              className="dropdown menu w-65 card bg-base-200 p-3 max-w-80 border border-base-300 dropdown-end"
+              popover="auto" 
+              id={`popover-${element.id}`} 
+              style={{ 
+                positionAnchor: `--anchor-${element.id}`,
+                opacity: 0,
+                transition: 'opacity 0.15s ease-in',
+              } as React.CSSProperties}
+              onToggle={(e: any) => {
+                // Show the popover only after it's positioned
+                if (e.newState === 'open') {
+                  requestAnimationFrame(() => {
+                    const popover = document.getElementById(`popover-${element.id}`);
+                    if (popover) {
+                      popover.style.opacity = '1';
+                    }
+                  });
+                } else {
                   const popover = document.getElementById(`popover-${element.id}`);
                   if (popover) {
-                    popover.style.opacity = '1';
+                    popover.style.opacity = '0';
                   }
-                });
-              } else {
-                const popover = document.getElementById(`popover-${element.id}`);
-                if (popover) {
-                  popover.style.opacity = '0';
                 }
-              }
-            }}
-          >
-            <TextEditor
-              element={element}
-              currentTextProps={currentTextProps}
-              updateProperty={updateProperty}
-              onDelete={deleteSelectedElement}
-            />
+              }}
+            >
+              <TextEditor
+                element={element}
+                currentTextProps={currentTextProps}
+                updateProperty={updateProperty}
+                onDelete={deleteSelectedElement}
+              />
+            </div>
+            
           </div>
-          
-        </div>
-      ))}
+        )}
+      )}
 
       {textElements.length === 0 && (
         <div className="text-sm text-center py-4">

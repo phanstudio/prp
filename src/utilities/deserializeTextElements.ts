@@ -22,7 +22,7 @@ function safeNumber(value: any, fallback = 0): number {
  * Deserialize a single text element from template data into a Fabric Textbox
  */
 export function deserializeTextElement(el: any, canvas: Canvas): Textbox {
-  const textBox = new Textbox(el.text || "Text", {
+  const textBox = new Textbox(el.text || "", {
     left: safeNumber(el.x, 100),
     top: safeNumber(el.y, 100),
     width: safeNumber(el.width, 200),

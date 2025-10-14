@@ -23,7 +23,7 @@ export const LoginPage: React.FC = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location]);
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -32,7 +32,8 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
     try {
       await login(email, password);
-      navigate('/');
+      const from = (location.state as any)?.from?.pathname || '/';
+      navigate(from, { replace: true });
     } catch (err: any) {
       let errorMessage = "Registration failed. Please try again.";
 
@@ -118,8 +119,9 @@ export const LoginPage: React.FC = () => {
       <div className="mt-4 text-center">
         <p className="text-base-content/50">
           Don't have an account?{' '}
-          <Link to={"/register"} className="text-accent link link-hover">
-            Register here
+          <Link  state={{ from: (location.state as any)?.from || '/' }} // 👈 carry over destination
+            to={"/register"} className="text-accent link link-hover">
+              Register here
           </Link>
         </p>
       </div>

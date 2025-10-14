@@ -19,7 +19,6 @@ export const RegisterPage: React.FC = () => {
   const { addToast } = useToast();
 
   const from = (location.state as any)?.from?.pathname || "/";
-  console.log(from);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,13 +40,13 @@ export const RegisterPage: React.FC = () => {
         // Redirect to login page
         navigate("/login", {
           state: {
-            message:
-              "Registration successful! Please log in with your credentials.",
+            from, // 👈 preserve where they were going
+            message: "Registration successful! Please log in with your credentials.",
           },
         });
       } else {
         // Both registration and auto-login succeeded
-        navigate("/");
+        navigate(from, { replace: true });
       }
     } catch (err: any) {
       console.error("Registration error:", err);
@@ -156,7 +155,9 @@ export const RegisterPage: React.FC = () => {
       <div className="mt-4 text-center">
         <p className="text-base-content/50">
           Already have an account?{" "}
-          <Link to={"/login"} className="text-accent link link-hover">
+          <Link 
+          state={{ from: (location.state as any)?.from || '/' }} // 👈 carry over destination
+          to={"/login"} className="text-accent link link-hover">
             Sign In
           </Link>
         </p>
