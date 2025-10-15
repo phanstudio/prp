@@ -15,6 +15,17 @@ const CANVAS_DIMENSIONS = {
 
 const BASE_CANVAS_SIZE = CANVAS_DIMENSIONS.default;
 
+const CANVAS_PADDING = {
+  mobile: 64,
+  tablet: 48,
+  laptop: 64,
+}
+
+interface CanvasSize{
+  width: number,
+  height: number,
+}
+
 interface UseFabricOptions {
   watermarkConfig?: WatermarkConfig
 }
@@ -30,6 +41,7 @@ export function useFabric(options?: UseFabricOptions) {
 
   const fileGeneratorRef = useRef<CanvasFileGenerator | null>(null)
   const watermarkManagerRef = useRef<WatermarkManager | null>(null)
+  const [baseCanvasSize, setBaseCanvasSize] = useState<CanvasSize>({width:BASE_CANVAS_SIZE, height:BASE_CANVAS_SIZE});
 
   // Initialize canvas
   useEffect(() => {
@@ -80,13 +92,22 @@ export function useFabric(options?: UseFabricOptions) {
     };
   }, []);
 
+  // useEffect(() => {
+  //   const canvas = fabricCanvasRef.current;
+  //   if (canvas) {
+  //     adjustCanvasSize(canvas, isMobile) // Adjust size on window resize
+  //     canvas.renderAll()
+  //   }
+  // }, [isMobile, windowSize.width, windowSize.height, baseCanvasSize])
+
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    if (canvas) {
-      adjustCanvasSize(canvas, isMobile) // Adjust size on window resize
-      canvas.renderAll()
-    }
-  }, [isMobile, windowSize.width, windowSize.height])
+    if (!canvas) return;
+  
+    adjustCanvasSize(canvas, isMobile);
+    canvas.renderAll();
+    console.log(windowSize, baseCanvasSize)
+  }, [isMobile, windowSize.width, windowSize.height, baseCanvasSize]);
 
   function adjustCanvasSize(fabricCanvas: Canvas, isMobile: boolean) {
     if (!windowSize.width || !windowSize.height) return;
@@ -99,16 +120,17 @@ export function useFabric(options?: UseFabricOptions) {
         )
       : CANVAS_DIMENSIONS.default;
   
+    const bSize = Math.max(baseCanvasSize.width, baseCanvasSize.height);
     // Compute zoom factor relative to base canvas size
-    const zoom = targetSize / BASE_CANVAS_SIZE;
+    const zoom = targetSize / bSize;
   
     // Set zoom instead of scaling all objects
     fabricCanvas.setZoom(zoom);
   
     // Resize the visible DOM element so it matches scaled view
     fabricCanvas.setDimensions({
-      width: BASE_CANVAS_SIZE * zoom,
-      height: BASE_CANVAS_SIZE * zoom,
+      width: baseCanvasSize.width * zoom,
+      height: baseCanvasSize.height * zoom,
     });
   
     fabricCanvas.renderAll();
@@ -140,18 +162,33 @@ export function useFabric(options?: UseFabricOptions) {
     }
   
     // Determine canvas max dimensions based on window size
+    // let maxWidth: number, maxHeight: number;
+    // if (windowSize.width! <= 640) {
+    //   maxWidth = Math.min(windowSize.width! - 32, 500);
+    //   maxHeight = maxWidth;
+    // } else if (windowSize.width! <= 768) {
+    //   maxWidth = Math.min(windowSize.width! - 48, 600);
+    //   maxHeight = maxWidth;
+    // } else if (windowSize.width! <= 1024) {
+    //   maxWidth = Math.min(windowSize.width! - 64, 700);
+    //   maxHeight = windowSize.height! - 350;
+    // } else {
+    //   maxWidth = Math.min(windowSize.width! * 0.6 - 80, 800);
+    //   maxHeight = windowSize.height! - 300;
+    // }
+
     let maxWidth: number, maxHeight: number;
     if (windowSize.width! <= 640) {
-      maxWidth = Math.min(windowSize.width! - 32, 500);
+      maxWidth = Math.min(windowSize.width! - CANVAS_PADDING.mobile, 500);
       maxHeight = maxWidth;
     } else if (windowSize.width! <= 768) {
-      maxWidth = Math.min(windowSize.width! - 48, 600);
+      maxWidth = Math.min(windowSize.width! - CANVAS_PADDING.tablet, 600);
       maxHeight = maxWidth;
     } else if (windowSize.width! <= 1024) {
-      maxWidth = Math.min(windowSize.width! - 64, 700);
+      maxWidth = Math.min(windowSize.width! - CANVAS_PADDING.laptop, 700);
       maxHeight = windowSize.height! - 350;
     } else {
-      maxWidth = Math.min(windowSize.width! * 0.6 - 80, 800);
+      maxWidth = Math.min(windowSize.width! * 0.6 - CANVAS_PADDING.laptop, 800);
       maxHeight = windowSize.height! - 300;
     }
   
@@ -169,9 +206,9 @@ export function useFabric(options?: UseFabricOptions) {
     const imgAspect = img.width! / img.height!;
 
     let scale: number;
-
+    const sameAspects:boolean = (imgAspect > canvasAspect);
     // Fit image entirely inside canvas
-    if (imgAspect > canvasAspect) {
+    if (sameAspects) {
       // Image is wider than canvas → scale to fit width
       scale = canvas.width! / img.width!;
     } else {
@@ -179,26 +216,43 @@ export function useFabric(options?: UseFabricOptions) {
       scale = canvas.height! / img.height!;
     }
 
+    const scalew = (sameAspects ? canvas.width!: img.width! * scale);
+    const scaleh = (!sameAspects ?  canvas.height!: img.height! * scale);
+
+    // Set image properties
     img.set({
-      originX: "center",
-      originY: "center",
-      left: canvas.width! / 2,
-      top: canvas.height! / 2,
+      originX: "left",
+      originY: "top",
+      left: 0,
+      top: 0,
       scaleX: scale,
       scaleY: scale,
       selectable: false,
       evented: false,
     });
 
-    // canvas.setDimensions({
-    //   width:img.width*scale,
-    //   height:img.height*scale,
-    // })
+    console.log(scalew, scaleh);
+
+    setBaseCanvasSize({
+      width:scalew,
+      height:scaleh
+    })
+    // img.set({
+    //   originX: "center",
+    //   originY: "bottom",
+    //   left: canvas.width! / 2,
+    //   top: canvas.height! / 2,
+    //   scaleX: scale,
+    //   scaleY: scale,
+    //   selectable: false,
+    //   evented: false,
+    // });
   
     canvas.backgroundImage = img;
     canvas.backgroundColor = "transparent";
+    adjustCanvasSize(canvas, isMobile);
     canvas.renderAll();
-  
+
     return canvas;
   }
   

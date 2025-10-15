@@ -36,22 +36,6 @@ const TextElementList: React.FC<TextElementListProps> = ({
                   : "text-default"
               }`}
             >
-              {/* <label className="input flex-1 join-item">
-                <Pencil className="h-[1em] opacity-50"/>
-                <input 
-                  type="text" className="grow" value=
-                  {isSelected ? currentTextProps?.text || "" : element.text || ""}
-                  onChange={(e) => {
-                    setSelectedElement(element.id);
-                    updateProperty({ text: e.target.value });
-                  }}
-                  placeholder={`Text ${index + 1}: Enter text...`} 
-                  onFocus={() => {
-                    setSelectedElement(element.id);
-                  }}
-                />
-                
-              </label> */}
               <textarea
                 placeholder={`Text ${index + 1}: Enter text...`}
                 className="textarea textarea-sm textarea-bordered w-full mb-2 min-h-10"
