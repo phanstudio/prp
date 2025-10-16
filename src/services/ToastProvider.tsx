@@ -119,7 +119,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ addToast, removeToast }}>
       {children}
-      <div className="toast toast-top toast-end">
+      <div className="toast toast-top toast-end z-[1000]">
         {toasts.map(toast => (
           <div key={toast.id} className={getToastStyles(toast.type, toast.isExiting)} role="alert" >
             {getIcon(toast.type)}

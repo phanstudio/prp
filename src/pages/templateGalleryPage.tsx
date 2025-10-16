@@ -5,6 +5,7 @@ import { Plus, Trash2, Search, Edit2, X } from "lucide-react";
 import type { Template } from "../components/types";
 import TemplateService from "../services/templateService";
 import { useTemplates } from "../contexts/TemplateContext";
+import { useToast } from '../services/ToastProvider';
 
 interface TemplateGalleryProps {
   onSelectTemplate: (template: Template) => void;
@@ -31,6 +32,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 12; // adjust as needed
+  const { addToast, removeToast } = useToast();
   
   // loading states
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -103,14 +105,21 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   }, [urlSearchTerm]);
 
   // Initial load based on URL search param
+  const hasInitializedRef = React.useRef(false);
+
   useEffect(() => {
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
     const initialLoad = async () => {
+      console.log(9)
       if (templates.length === 0) {
         setIsInitialLoading(true);
         await fetchTemplates(1, urlSearchTerm);
         setIsInitialLoading(false);
       }else{
+        const loader = addToast('Refreshing', 'loading', 0);
         await fetchTemplates(1, urlSearchTerm);
+        removeToast(loader, true);
       }
     };
     initialLoad();

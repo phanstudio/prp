@@ -23,23 +23,44 @@ export const TemplateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     sessionStorage.setItem("allTemplates", JSON.stringify(templates));
   }, [templates]);
 
-  // --- Pagination append (multiple) ---
+  // // --- Pagination append (multiple) ---
+  // const appendTemplatesPaginated = useCallback((newTemplates: Template[]) => {
+  //   setTemplates((prev) => {
+  //     const existingIds = new Set(prev.map((t) => t.id));
+  //     const filtered = newTemplates.filter((t) => !existingIds.has(t.id));
+  //     return [...prev, ...filtered];
+  //   });
+  // }, []);
+
+  // // --- Single append (safe) ---
+  // const appendTemplate = useCallback((newTemplate: Template) => {
+  //   setTemplates((prev) => {
+  //     const exists = prev.some((t) => t.id === newTemplate.id);
+  //     if (exists) return prev;
+  //     return [...prev, newTemplate];
+  //   });
+  // }, []);
+
+  // --- Pagination append (replace or add multiple) ---
   const appendTemplatesPaginated = useCallback((newTemplates: Template[]) => {
     setTemplates((prev) => {
-      const existingIds = new Set(prev.map((t) => t.id));
-      const filtered = newTemplates.filter((t) => !existingIds.has(t.id));
-      return [...prev, ...filtered];
+      const map = new Map(prev.map((t) => [t.id, t]));
+      for (const newT of newTemplates) {
+        map.set(newT.id, newT); // replaces if exists, adds if not
+      }
+      return Array.from(map.values());
     });
   }, []);
 
-  // --- Single append (safe) ---
+  // --- Single append (replace or add one) ---
   const appendTemplate = useCallback((newTemplate: Template) => {
     setTemplates((prev) => {
-      const exists = prev.some((t) => t.id === newTemplate.id);
-      if (exists) return prev;
-      return [...prev, newTemplate];
+      const map = new Map(prev.map((t) => [t.id, t]));
+      map.set(newTemplate.id, newTemplate); // replaces or adds
+      return Array.from(map.values());
     });
   }, []);
+
 
   // --- Clear all templates ---
   const clearTemplates = useCallback(() => {

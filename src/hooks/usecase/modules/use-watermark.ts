@@ -9,6 +9,7 @@ export interface WatermarkConfig {
   opacity?: number
   color?: string
   position?: "bottom-right" | "bottom-left" | "top-right" | "top-left" | "center"
+  stroke?: string
 }
 
 export class WatermarkManager {
@@ -24,6 +25,7 @@ export class WatermarkManager {
       opacity: 0.5,
       color: "#FFFFFF",
       position: "bottom-right",
+      stroke: "#000000",
       ...config,
     }
   }
@@ -93,10 +95,10 @@ export class WatermarkManager {
    * Calculate padding based on canvas size
    */
   private calculatePadding(): number {
-    if (!this.canvas) return 20
+    if (!this.canvas) return 10
 
     const canvasWidth = this.canvas.getWidth()
-    return Math.max(10, canvasWidth * 0.04) // 4% of canvas width
+    return Math.max(5, canvasWidth * 0.02) // 2% of canvas width
   }
 
   /**
@@ -111,6 +113,8 @@ export class WatermarkManager {
       fontSize: fontSize,
       fill: this.config.color,
       opacity: this.config.opacity,
+      stroke: this.config.stroke,
+      strokeWidth: fontSize * 0.05, // 5% of font size for proportional outline
       selectable: false,
       evented: false,
       hasControls: false,

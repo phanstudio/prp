@@ -162,21 +162,6 @@ export function useFabric(options?: UseFabricOptions) {
     }
   
     // Determine canvas max dimensions based on window size
-    // let maxWidth: number, maxHeight: number;
-    // if (windowSize.width! <= 640) {
-    //   maxWidth = Math.min(windowSize.width! - 32, 500);
-    //   maxHeight = maxWidth;
-    // } else if (windowSize.width! <= 768) {
-    //   maxWidth = Math.min(windowSize.width! - 48, 600);
-    //   maxHeight = maxWidth;
-    // } else if (windowSize.width! <= 1024) {
-    //   maxWidth = Math.min(windowSize.width! - 64, 700);
-    //   maxHeight = windowSize.height! - 350;
-    // } else {
-    //   maxWidth = Math.min(windowSize.width! * 0.6 - 80, 800);
-    //   maxHeight = windowSize.height! - 300;
-    // }
-
     let maxWidth: number, maxHeight: number;
     if (windowSize.width! <= 640) {
       maxWidth = Math.min(windowSize.width! - CANVAS_PADDING.mobile, 500);
