@@ -31,11 +31,12 @@ export function enableTextboxHoverOutline(
   let transformingObject: Textbox | null = null // Track which object is being transformed
 
   function createOutlineForTextbox(textbox: Textbox): Rect {
+    const paddedWidth = textbox.strokeWidth!; //0
     const rect = new fabric.Rect({
       left: textbox.left,
       top: textbox.top,
-      width: textbox.width! * textbox.scaleX!,
-      height: textbox.height! * textbox.scaleY!,
+      width: (textbox.width!+paddedWidth) * textbox.scaleX!,
+      height: (textbox.height!+paddedWidth) * textbox.scaleY!,
       angle: textbox.angle,
       originX: textbox.originX,
       originY: textbox.originY,

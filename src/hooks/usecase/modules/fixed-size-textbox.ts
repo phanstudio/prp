@@ -46,6 +46,43 @@ export function makeTextboxResizable(
     return realOriginalCalcTextHeight.call(textbox)
   }
   
+  
+  // function checkFitsAtFontSize(fontSize: number): { fitsWidth: boolean; fitsHeight: boolean } {
+  //   // Set font size for measurement
+  //   textbox.set({ fontSize })
+  //   textbox._clearCache()
+    
+  //   const containerWidth = textbox.width || 200
+  //   const containerHeight = textbox.height || 100
+    
+  //   // Check width constraint (unwrapped lines)
+  //   const text = textbox.text || ""
+  //   const lines = text.split('\n')
+  //   let maxLineWidth = 0
+    
+  //   const ctx = canvas.getContext()
+  //   const fontString = textbox._getFontDeclaration()
+    
+  //   for (const line of lines) {
+  //     if (!line) continue
+  //     ctx.save()
+  //     ctx.font = fontString
+  //     const metrics = ctx.measureText(line)
+  //     maxLineWidth = Math.max(maxLineWidth, metrics.width)
+  //     ctx.restore()
+  //   }
+
+  //   maxLineWidth += 3
+    
+  //   // Check height constraint (with wrapping applied) - use REAL calculation
+  //   const textHeight = getActualTextHeight()
+    
+  //   return {
+  //     fitsWidth: maxLineWidth <= containerWidth,
+  //     fitsHeight: textHeight <= containerHeight
+  //   }
+  // }
+
   // // Function to check if text fits with a given font size
   function checkFitsAtFontSize(fontSize: number): { fitsWidth: boolean; fitsHeight: boolean } {
     // Set font size for measurement
@@ -54,6 +91,10 @@ export function makeTextboxResizable(
     
     const containerWidth = textbox.width || 200
     const containerHeight = textbox.height || 100
+    
+    // Get stroke width to account for outline
+    // const strokeWidth = textbox.strokeWidth || 0
+    // const strokePadding = strokeWidth //* 2 // Account for both sides
     
     // Check width constraint (unwrapped lines)
     const text = textbox.text || ""
@@ -72,10 +113,11 @@ export function makeTextboxResizable(
       ctx.restore()
     }
 
-    maxLineWidth += 3
+    // Add padding for outline and general spacing
+    maxLineWidth += 3 //+ strokePadding
     
     // Check height constraint (with wrapping applied) - use REAL calculation
-    const textHeight = getActualTextHeight()
+    const textHeight = getActualTextHeight() //+ strokePadding
     
     return {
       fitsWidth: maxLineWidth <= containerWidth,

@@ -1,7 +1,7 @@
 import { Canvas, Textbox, Shadow } from "fabric"
 import * as fabric from "fabric"
 import { makeTextboxResizable } from "./modules/fixed-size-textbox"
-import type { TextAlignType, FontStyleType, TextEffectType } from "../../components/types"
+import { type TextAlignType, type FontStyleType, type TextEffectType, DefualtTextSettings } from "../../components/types"
 
 export interface TextProperties {
   text?: string
@@ -168,6 +168,7 @@ export class TextManager {
       }),
       stroke: undefined,
       strokeWidth: 0,
+      paintFirst: undefined,
     })
   }
 
@@ -178,10 +179,11 @@ export class TextManager {
     if (!this.selectedText) return
 
     this.selectedText.set({
-      stroke: properties.strokeColor || "#000000",
-      strokeWidth: properties.strokeWidth || 2,
+      stroke: properties.strokeColor || DefualtTextSettings.outlineStrokeColor,
+      strokeWidth: properties.strokeWidth || DefualtTextSettings.outlineStrokeWidth,
       strokeLineJoin: "round",
       strokeLineCap: "round",
+      paintFirst: DefualtTextSettings.paintFirst,
       shadow: null,
     })
   }
@@ -196,6 +198,8 @@ export class TextManager {
       shadow: null,
       stroke: undefined,
       strokeWidth: 0,
+      paintFirst: undefined,
+      strokeUniform: true,
     })
   }
 
@@ -232,6 +236,7 @@ export class TextManager {
         this.applyOutline({ ...currentProps, ...properties })
       }
     }
+    console.log(properties);
 
     // Update basic text properties
     const basicProps: any = {}
@@ -257,7 +262,7 @@ export class TextManager {
 
     // Trigger auto-adjust for text content changes or any property that affects layout
     if (properties.text !== undefined || properties.maxFontSize !== undefined || 
-        properties.fontFamily !== undefined || properties.fontWeight !== undefined) {
+        properties.fontFamily !== undefined || properties.fontWeight !== undefined || properties.strokeWidth !== undefined) {
       (this.selectedText as any)._autoShrinkIfNeeded?.();
     }
     // this.canvas.renderAll()
@@ -277,8 +282,14 @@ export class TextManager {
       .map((obj) => {
         const textbox = obj as Textbox
         const shadow = textbox.shadow as Shadow | null
+        const hasStroke = (textbox.strokeWidth || 0) > 0
+        const hasShadow = shadow !== null
+
+        let effectType: TextEffectType = "none"
+        if (hasStroke) effectType = "outline"
+        else if (hasShadow) effectType = "shadow"
         
-        return {
+        const result: any = {
           id: (textbox as any).id,
           text: textbox.text,
           x: textbox.left,
@@ -293,23 +304,83 @@ export class TextManager {
           linethrough: textbox.linethrough,
           rotation: textbox.angle,
           width: textbox.width,
+          effectType: effectType,
           height: textbox.height,
           _maxFontSize: (textbox as any)._maxFontSize ?? textbox.fontSize,
-          // Outline properties
-          stroke: textbox.stroke,
-          strokeWidth: textbox.strokeWidth,
-          strokeLineJoin: textbox.strokeLineJoin,
-          strokeLineCap: textbox.strokeLineCap,
-          // Shadow properties
-          shadow: shadow ? {
+        }
+
+        // Only include outline properties if effect type is outline
+        if (effectType === "outline") {
+          result.stroke = textbox.stroke
+          result.strokeWidth = textbox.strokeWidth
+          result.strokeLineJoin = textbox.strokeLineJoin
+          result.strokeLineCap = textbox.strokeLineCap
+        }
+
+        // Only include shadow properties if effect type is shadow
+        if (effectType === "shadow" && shadow) {
+          result.shadow = {
             color: shadow.color,
             blur: shadow.blur,
             offsetX: shadow.offsetX,
             offsetY: shadow.offsetY,
-          } : null,
+          }
         }
+
+        return result
       })
   }
+
+
+  // getAllTextElements(): any[] {
+  //   if (!this.canvas) return []
+  
+  //   return this.canvas.getObjects()
+  //     .filter((obj) => obj instanceof fabric.Textbox)
+  //     .map((obj) => {
+  //       const textbox = obj as Textbox
+  //       const shadow = textbox.shadow as Shadow | null
+
+  //       const hasStroke = (textbox.strokeWidth || 0) > 0
+  //       const hasShadow = shadow !== null
+
+  //       let effectType: TextEffectType = "none"
+  //       if (hasStroke) effectType = "outline"
+  //       else if (hasShadow) effectType = "shadow"
+        
+  //       return {
+  //         id: (textbox as any).id,
+  //         text: textbox.text,
+  //         x: textbox.left,
+  //         y: textbox.top,
+  //         fontSize: textbox.fontSize,
+  //         fontFamily: textbox.fontFamily,
+  //         fill: textbox.fill,
+  //         textAlign: textbox.textAlign,
+  //         fontWeight: textbox.fontWeight,
+  //         fontStyle: textbox.fontStyle,
+  //         underline: textbox.underline,
+  //         linethrough: textbox.linethrough,
+  //         rotation: textbox.angle,
+  //         width: textbox.width,
+  //         effectType: effectType,
+  //         height: textbox.height,
+  //         _maxFontSize: (textbox as any)._maxFontSize ?? textbox.fontSize,
+  //         // Outline properties
+  //         stroke: textbox.stroke,
+  //         strokeWidth: textbox.strokeWidth,
+  //         strokeLineJoin: textbox.strokeLineJoin,
+  //         strokeLineCap: textbox.strokeLineCap,
+  //         // Shadow properties
+  //         shadow: shadow ? {
+  //           color: shadow.color,
+  //           blur: shadow.blur,
+  //           offsetX: shadow.offsetX,
+  //           offsetY: shadow.offsetY,
+  //         } : null,
+  //       }
+  //     })
+  // }
 
   /**
    * Check if there's a selected text object

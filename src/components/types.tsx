@@ -68,12 +68,13 @@ export type WatermarkMode = "download-only" | "always" | "none";
 export const DefualtTextSettings = {
   fontFamily: "Imapact",
   textColor: "#ffffff",
-  fontSize: 24,
+  fontSize: 32,
   shadowColor: "#000000",
-  outlineStrokeWidth: 1,
+  outlineStrokeWidth: 2,
   outlineStrokeColor: "#000000",
   shadowOpacity: 0.75,
   shadowBlur: 10,
   shadowOffsetX: -1,// 5
   shadowOffsetY: 1,// 5
+  paintFirst: "stroke" as "fill" | "stroke" | undefined,
 }

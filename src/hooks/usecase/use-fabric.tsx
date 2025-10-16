@@ -7,6 +7,7 @@ import { enableTextboxHoverOutline } from "./modules/textbox-hover-outline"
 import { makeTextboxResizable } from "./modules/fixed-size-textbox"
 import { deserializeTextElement } from "../../utilities/deserializeTextElements";
 import { useWindow } from "./use-window"
+import { DefualtTextSettings } from "../../components/types";
 
 const CANVAS_DIMENSIONS = {
   default: 600,
@@ -106,7 +107,6 @@ export function useFabric(options?: UseFabricOptions) {
   
     adjustCanvasSize(canvas, isMobile);
     canvas.renderAll();
-    console.log(windowSize, baseCanvasSize)
   }, [isMobile, windowSize.width, windowSize.height, baseCanvasSize]);
 
   function adjustCanvasSize(fabricCanvas: Canvas, isMobile: boolean) {
@@ -216,8 +216,6 @@ export function useFabric(options?: UseFabricOptions) {
       evented: false,
     });
 
-    console.log(scalew, scaleh);
-
     setBaseCanvasSize({
       width:scalew,
       height:scaleh
@@ -250,14 +248,16 @@ export function useFabric(options?: UseFabricOptions) {
       left: 100,
       top: 100 + textElements.length * 50,
       width: 200,
-      fontSize: 32,
-      fill: "#ffffff",
-      fontFamily: "Impact",
+      fontSize: DefualtTextSettings.fontSize,
+      fill: DefualtTextSettings.textColor,
+      fontFamily: DefualtTextSettings.fontFamily,
       textAlign: "center",
-      strokeWidth: 2,
-      stroke: "#000000",
+      strokeWidth: DefualtTextSettings.outlineStrokeWidth,
+      stroke: DefualtTextSettings.outlineStrokeColor,
       strokeLineJoin: "round",
       strokeLineCap: "round",
+      paintFirst: DefualtTextSettings.paintFirst,
+      strokeUniform: false,
     });
 
     (textBox as any).id = Date.now().toString() + Math.random();

@@ -22,6 +22,30 @@ function safeNumber(value: any, fallback = 0): number {
  * Deserialize a single text element from template data into a Fabric Textbox
  */
 export function deserializeTextElement(el: any, canvas: Canvas): Textbox {
+  const effectType = el.effectType || "none"
+  
+  // Determine if we should apply outline based on effectType
+  const shouldApplyOutline = effectType === "outline"
+  const outlineStroke = shouldApplyOutline 
+    ? (el.stroke || el.outlineColor || DefualtTextSettings.outlineStrokeColor)
+    : undefined
+  const outlineWidth = shouldApplyOutline 
+    ? safeNumber(el.strokeWidth ?? el.outlineSize, 2)
+    : 0
+  
+  // Determine if we should apply shadow based on effectType
+  const shouldApplyShadow = effectType === "shadow"
+  const shadowConfig = shouldApplyShadow && (el.shadow || el.shadowColor)
+    ? new Shadow({
+        color: el.shadow?.color || computeShadowColor(
+          el.shadowColor || "#000000", 
+          el.shadowOpacity ?? 0.75
+        ),
+        blur: safeNumber(el.shadow?.blur ?? el.shadowBlur, 10),
+        offsetX: safeNumber(el.shadow?.offsetX ?? el.shadowOffsetX, 5),
+        offsetY: safeNumber(el.shadow?.offsetY ?? el.shadowOffsetY, 5),
+      })
+    : undefined
   const textBox = new Textbox(el.text || "", {
     left: safeNumber(el.x, 100),
     top: safeNumber(el.y, 100),
@@ -34,39 +58,26 @@ export function deserializeTextElement(el: any, canvas: Canvas): Textbox {
     underline: !!el.underline,
     linethrough: !!el.linethrough,
     textAlign: el.textAlign || "center",
-    fill: el.color || el.fill || "#ffffff",
+    fill: el.color || el.fill || DefualtTextSettings.textColor,
 
     // Outline
-    stroke: el.outlineColor || el.stroke || "#000000",
-    strokeWidth: safeNumber(el.outlineSize ?? el.strokeWidth, 0),
-    strokeLineJoin: "round",
-    strokeLineCap: "round",
+    stroke: outlineStroke,
+    strokeWidth: outlineWidth,
+    strokeLineJoin: shouldApplyOutline ? "round" : undefined,
+    strokeLineCap: shouldApplyOutline ? "round" : undefined,
+    paintFirst: shouldApplyOutline ? DefualtTextSettings.paintFirst: undefined,
+    strokeUniform: true,
 
     // Rotation
     angle: normalizeRotation(el.rotation),
 
     // Shadow (if any)
-    shadow:
-      el.shadowColor
-        ? new Shadow({
-            color: computeShadowColor(el.shadowColor, el.shadowOpacity),
-            blur: safeNumber(el.shadowBlur, 5),
-            offsetX: safeNumber(el.shadowOffsetX, 0),
-            offsetY: safeNumber(el.shadowOffsetY, 0),
-          })
-        : undefined,
+    shadow: shadowConfig,
   });
 
   // Restore custom metadata for serialization or editing
   (textBox as any).id = el.id || Date.now().toString() + Math.random();
   (textBox as any).effectType = el.effectType || "none";
-  (textBox as any).strokeColor = el.outlineColor;
-  (textBox as any).strokeWidth = el.outlineSize;
-  (textBox as any).shadowColor = el.shadowColor;
-  (textBox as any).shadowBlur = el.shadowBlur;
-  (textBox as any).shadowOffsetX = el.shadowOffsetX;
-  (textBox as any).shadowOffsetY = el.shadowOffsetY;
-  (textBox as any).shadowOpacity = el.shadowOpacity;
   (textBox as any).maxFontSize = safeNumber(el.fontSize, DefualtTextSettings.fontSize);
 
   ;(textBox as any)._fixedHeight = safeNumber(el.height, 50);
