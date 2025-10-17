@@ -1,6 +1,7 @@
 import { Textbox, Shadow, type Canvas } from "fabric";
 import { makeTextboxResizable } from "../hooks/usecase/modules/fixed-size-textbox";
 import { DefualtTextSettings } from "../components/types";
+import { ensureFontLoaded } from "../utilities/fontLoader";
 /**
  * Normalize rotation angle to within -180° → 180°
  */
@@ -46,6 +47,7 @@ export function deserializeTextElement(el: any, canvas: Canvas): Textbox {
         offsetY: safeNumber(el.shadow?.offsetY ?? el.shadowOffsetY, 5),
       })
     : undefined
+  ensureFontLoaded(el.fontFamily);
   const textBox = new Textbox(el.text || "", {
     left: safeNumber(el.x, 100),
     top: safeNumber(el.y, 100),

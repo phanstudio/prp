@@ -277,7 +277,7 @@ export function useFabric(options?: UseFabricOptions) {
     const objects = canvas.getObjects().filter((obj) => obj instanceof Textbox);
     objects.forEach((obj) => canvas.remove(obj));
 
-    // console.log(template.textElements);
+    console.log(template.textElements);
     // Add template text elements
     template.textElements.forEach((element) => {
       const textBox = deserializeTextElement(element, canvas);

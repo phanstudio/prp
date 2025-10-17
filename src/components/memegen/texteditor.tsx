@@ -14,13 +14,14 @@ interface TextEditorProps {
 
 const TextEditor: React.FC<TextEditorProps> = (
   { element, updateProperty, onDelete, currentTextProps }) => {
-  if (!element || !currentTextProps) {
-    return (
-      <div className="text-gray-500 text-sm text-center py-4">
-        Select a text element to edit it
-      </div>
-    );
-  }
+  console.log(element?.fontFamily);
+  // if (!element || !currentTextProps) {
+  //   return (
+  //     <div className="text-gray-500 text-sm text-center py-4">
+  //       Select a text element to edit it
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="space-y-3 p-2">
@@ -28,17 +29,17 @@ const TextEditor: React.FC<TextEditorProps> = (
         <label className="label-text text-xs">Color:</label>
         <input
           type="color"
-          value={currentTextProps.fill || DefualtTextSettings.textColor}
+          value={currentTextProps?.fill || element?.fill || DefualtTextSettings.textColor}
           onChange={(e) => updateProperty({fill: e.target.value})}
           className="input input-xs input-bordered w-full h-8"
         />
       </div>
       
       <div>
-        <label className="label-text text-xs">Max Font Size: {currentTextProps.maxFontSize}px</label>
+        <label className="label-text text-xs">Max Font Size: {currentTextProps?.maxFontSize||element?.maxFontSize||DefualtTextSettings.fontSize}px</label>
         <input
           type="range" min="12" max="100" className="range range-sm"
-          value={currentTextProps.maxFontSize || DefualtTextSettings.fontSize}
+          value={currentTextProps?.maxFontSize|| element?.maxFontSize || DefualtTextSettings.fontSize}
           onChange={(e) =>
             updateProperty({ maxFontSize: parseInt(e.target.value) })
           }
@@ -51,14 +52,14 @@ const TextEditor: React.FC<TextEditorProps> = (
         <div className="flex gap-2">
           <button
             className={`btn btn-xs ${
-              currentTextProps.fontWeight === "bold"
+              (currentTextProps?.fontWeight||element?.fontWeight) === "bold"
                 ? "btn-primary"
                 : "btn-ghost"
             }`}
             onClick={() =>
               updateProperty({
                 fontWeight:
-                  currentTextProps.fontWeight === "bold"
+                currentTextProps?.fontWeight === "bold"
                     ? "normal"
                     : "bold",
               })
@@ -69,14 +70,14 @@ const TextEditor: React.FC<TextEditorProps> = (
 
           <button
             className={`btn btn-xs ${
-              currentTextProps.fontStyle === "italic"
+              (currentTextProps?.fontStyle || element?.fontStyle) === "italic"
                 ? "btn-primary"
                 : "btn-ghost"
             }`}
             onClick={() =>
               updateProperty({
                 fontStyle:
-                  currentTextProps.fontStyle === "italic"
+                currentTextProps?.fontStyle === "italic"
                     ? "normal"
                     : "italic",
               })
@@ -87,13 +88,13 @@ const TextEditor: React.FC<TextEditorProps> = (
 
           <button
             className={`btn btn-xs ${
-              currentTextProps.underline
+              (currentTextProps?.underline||element?.underline)
                 ? "btn-primary"
                 : "btn-ghost"
             }`}
             onClick={() =>
               updateProperty({
-                underline: !currentTextProps.underline,
+                underline: !currentTextProps?.underline,
               })
             }
           >
@@ -110,7 +111,7 @@ const TextEditor: React.FC<TextEditorProps> = (
             <button
               key={align}
               className={`btn btn-xs ${
-                currentTextProps.textAlign === align
+                (currentTextProps?.textAlign || element?.textAlign) === align
                   ? "btn-primary"
                   : "btn-ghost"
               }`}
@@ -122,14 +123,15 @@ const TextEditor: React.FC<TextEditorProps> = (
         </div>
       </div>
 
-      {/* Text Effects */}
-      <TextEffectsPanel
-        currentTextProps={currentTextProps}
-        updateProperty={updateProperty}
-      />
+      { currentTextProps &&
+          <TextEffectsPanel
+          currentTextProps={currentTextProps}
+          updateProperty={updateProperty}
+        />
+      }
       
       <FontSelector
-        value={currentTextProps.fontFamily || DefualtTextSettings.fontFamily}
+        value={currentTextProps?.fontFamily|| element?.fontFamily || DefualtTextSettings.fontFamily}
         onChange={(font) => updateProperty({ fontFamily: font })}
       />
       
