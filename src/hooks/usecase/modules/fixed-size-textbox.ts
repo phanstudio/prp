@@ -45,43 +45,6 @@ export function makeTextboxResizable(
   function getActualTextHeight(): number {
     return realOriginalCalcTextHeight.call(textbox)
   }
-  
-  
-  // function checkFitsAtFontSize(fontSize: number): { fitsWidth: boolean; fitsHeight: boolean } {
-  //   // Set font size for measurement
-  //   textbox.set({ fontSize })
-  //   textbox._clearCache()
-    
-  //   const containerWidth = textbox.width || 200
-  //   const containerHeight = textbox.height || 100
-    
-  //   // Check width constraint (unwrapped lines)
-  //   const text = textbox.text || ""
-  //   const lines = text.split('\n')
-  //   let maxLineWidth = 0
-    
-  //   const ctx = canvas.getContext()
-  //   const fontString = textbox._getFontDeclaration()
-    
-  //   for (const line of lines) {
-  //     if (!line) continue
-  //     ctx.save()
-  //     ctx.font = fontString
-  //     const metrics = ctx.measureText(line)
-  //     maxLineWidth = Math.max(maxLineWidth, metrics.width)
-  //     ctx.restore()
-  //   }
-
-  //   maxLineWidth += 3
-    
-  //   // Check height constraint (with wrapping applied) - use REAL calculation
-  //   const textHeight = getActualTextHeight()
-    
-  //   return {
-  //     fitsWidth: maxLineWidth <= containerWidth,
-  //     fitsHeight: textHeight <= containerHeight
-  //   }
-  // }
 
   // // Function to check if text fits with a given font size
   function checkFitsAtFontSize(fontSize: number): { fitsWidth: boolean; fitsHeight: boolean } {

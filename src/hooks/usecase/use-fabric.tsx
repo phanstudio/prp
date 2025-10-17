@@ -14,7 +14,7 @@ const CANVAS_DIMENSIONS = {
   mobileMultiplier: 0.9,
 };
 
-const BASE_CANVAS_SIZE = CANVAS_DIMENSIONS.default;
+const BASE_CANVAS_SIZE = {width:600, height:600};
 
 const CANVAS_PADDING = {
   mobile: 64,
@@ -42,8 +42,9 @@ export function useFabric(options?: UseFabricOptions) {
 
   const fileGeneratorRef = useRef<CanvasFileGenerator | null>(null)
   const watermarkManagerRef = useRef<WatermarkManager | null>(null)
-  const [baseCanvasSize, setBaseCanvasSize] = useState<CanvasSize>({width:BASE_CANVAS_SIZE, height:BASE_CANVAS_SIZE});
-
+  const [baseCanvasSize, setBaseCanvasSize] = useState<CanvasSize>(BASE_CANVAS_SIZE);
+  // let newzoom = 1;
+  const currentZoomRef = useRef(1); 
   // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -93,21 +94,22 @@ export function useFabric(options?: UseFabricOptions) {
     };
   }, []);
 
-  // useEffect(() => {
-  //   const canvas = fabricCanvasRef.current;
-  //   if (canvas) {
-  //     adjustCanvasSize(canvas, isMobile) // Adjust size on window resize
-  //     canvas.renderAll()
-  //   }
-  // }, [isMobile, windowSize.width, windowSize.height, baseCanvasSize])
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    adjustCanvasSize(canvas, isMobile);
+    canvas.renderAll();
+  }, [isMobile, windowSize.width, windowSize.height, baseCanvasSize]);
 
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-  
+
     adjustCanvasSize(canvas, isMobile);
     canvas.renderAll();
-  }, [isMobile, windowSize.width, windowSize.height, baseCanvasSize]);
+  }, [baseCanvasSize]);
+
 
   function adjustCanvasSize(fabricCanvas: Canvas, isMobile: boolean) {
     if (!windowSize.width || !windowSize.height) return;
@@ -121,17 +123,18 @@ export function useFabric(options?: UseFabricOptions) {
       : CANVAS_DIMENSIONS.default;
   
     const bSize = Math.max(baseCanvasSize.width, baseCanvasSize.height);
-    // Compute zoom factor relative to base canvas size
-    const zoom = targetSize / bSize;
-  
-    // Set zoom instead of scaling all objects
-    fabricCanvas.setZoom(zoom);
-  
+    const zoom = targetSize / CANVAS_DIMENSIONS.default;
+    const scale = targetSize / bSize;
+    currentZoomRef.current = zoom;
+
     // Resize the visible DOM element so it matches scaled view
     fabricCanvas.setDimensions({
-      width: baseCanvasSize.width * zoom,
-      height: baseCanvasSize.height * zoom,
+      width: baseCanvasSize.width * scale,
+      height: baseCanvasSize.height * scale,
     });
+
+    // Set zoom instead of scaling all objects
+    fabricCanvas.setZoom(zoom);//currentZoomRef.current);
   
     fabricCanvas.renderAll();
   }
@@ -210,8 +213,8 @@ export function useFabric(options?: UseFabricOptions) {
       originY: "top",
       left: 0,
       top: 0,
-      scaleX: scale,
-      scaleY: scale,
+      scaleX: scale / currentZoomRef.current,
+      scaleY: scale / currentZoomRef.current,
       selectable: false,
       evented: false,
     });
@@ -220,20 +223,10 @@ export function useFabric(options?: UseFabricOptions) {
       width:scalew,
       height:scaleh
     })
-    // img.set({
-    //   originX: "center",
-    //   originY: "bottom",
-    //   left: canvas.width! / 2,
-    //   top: canvas.height! / 2,
-    //   scaleX: scale,
-    //   scaleY: scale,
-    //   selectable: false,
-    //   evented: false,
-    // });
   
     canvas.backgroundImage = img;
-    canvas.backgroundColor = "transparent";
-    adjustCanvasSize(canvas, isMobile);
+    // canvas.backgroundColor = "transparent";
+    // adjustCanvasSize(canvas, isMobile, true);
     canvas.renderAll();
 
     return canvas;
@@ -257,7 +250,7 @@ export function useFabric(options?: UseFabricOptions) {
       strokeLineJoin: "round",
       strokeLineCap: "round",
       paintFirst: DefualtTextSettings.paintFirst,
-      strokeUniform: false,
+      strokeUniform: false
     });
 
     (textBox as any).id = Date.now().toString() + Math.random();
@@ -293,7 +286,7 @@ export function useFabric(options?: UseFabricOptions) {
     const objects = canvas.getObjects().filter((obj) => obj instanceof Textbox);
     objects.forEach((obj) => canvas.remove(obj));
 
-    console.log(template.textElements);
+    // console.log(template.textElements);
     // Add template text elements
     template.textElements.forEach((element) => {
       const textBox = deserializeTextElement(element, canvas);

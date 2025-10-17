@@ -1,4 +1,5 @@
 // src/App.tsx
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -7,11 +8,18 @@ import { RegisterPage } from './pages/RegisterPage';
 import { TemplateCreatorRoute, GalleryRoute, MemeGeneratorRoute, MemeEditorRoute } from './utilities/router';
 import { RegularLayout, AdminLayout } from "./utilities/layouts";
 import './App.css';
-import './font.css';
+// Remove the old font.css import - we're using progressive loading now
+// import './font.css';
 import { ToastProvider } from './services/ToastProvider';
 import { TemplateProvider } from "./contexts/TemplateContext";
+import { initFontLoader } from './utilities/fontLoader';
 
 const AppRoutes: React.FC = () => {
+  // Initialize font loader on app start
+  useEffect(() => {
+    initFontLoader();
+  }, []);
+
   return (
     <Router>
       <ToastProvider>

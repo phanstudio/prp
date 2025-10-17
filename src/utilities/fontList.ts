@@ -1,4 +1,16 @@
-// fontList.ts
+// src/utilities/fontList.ts
+
+// Recommended fonts 
+export const recommendedFonts = [
+  "Impact",
+  "Arial",
+  "Comic Sans MS",
+  "Times New Roman",
+  "Courier New",
+  "Verdana",
+];
+
+// All available fonts
 export const allFonts = [
   "Impact",
   "Comic Sans MS",
@@ -211,13 +223,4 @@ export const allFonts = [
   "Zen Kaku Gothic New",
   "Zeyada",
   "Zilla Slab",
-];
-
-export const recommendedFonts = [
-  "Arial",
-  "Impact",
-  "Times New Roman",
-  "Comic Sans MS",
-  "Courier New",
-  "Verdana",
 ];
