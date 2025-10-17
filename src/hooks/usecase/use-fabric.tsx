@@ -10,11 +10,11 @@ import { useWindow } from "./use-window"
 import { DefualtTextSettings } from "../../components/types";
 
 const CANVAS_DIMENSIONS = {
-  default: 600,
+  default: 600,//700,
   mobileMultiplier: 0.9,
 };
 
-const BASE_CANVAS_SIZE = {width:600, height:600};
+const BASE_CANVAS_SIZE = {width:CANVAS_DIMENSIONS.default, height:CANVAS_DIMENSIONS.default};
 
 const CANVAS_PADDING = {
   mobile: 64,
@@ -43,8 +43,8 @@ export function useFabric(options?: UseFabricOptions) {
   const fileGeneratorRef = useRef<CanvasFileGenerator | null>(null)
   const watermarkManagerRef = useRef<WatermarkManager | null>(null)
   const [baseCanvasSize, setBaseCanvasSize] = useState<CanvasSize>(BASE_CANVAS_SIZE);
-  // let newzoom = 1;
   const currentZoomRef = useRef(1); 
+
   // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -102,15 +102,6 @@ export function useFabric(options?: UseFabricOptions) {
     canvas.renderAll();
   }, [isMobile, windowSize.width, windowSize.height, baseCanvasSize]);
 
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-
-    adjustCanvasSize(canvas, isMobile);
-    canvas.renderAll();
-  }, [baseCanvasSize]);
-
-
   function adjustCanvasSize(fabricCanvas: Canvas, isMobile: boolean) {
     if (!windowSize.width || !windowSize.height) return;
   
@@ -123,7 +114,7 @@ export function useFabric(options?: UseFabricOptions) {
       : CANVAS_DIMENSIONS.default;
   
     const bSize = Math.max(baseCanvasSize.width, baseCanvasSize.height);
-    const zoom = targetSize / CANVAS_DIMENSIONS.default;
+    const zoom = targetSize / (BASE_CANVAS_SIZE.width);
     const scale = targetSize / bSize;
     currentZoomRef.current = zoom;
 
