@@ -125,7 +125,7 @@ export function useFabric(options?: UseFabricOptions) {
     });
 
     // Set zoom instead of scaling all objects
-    fabricCanvas.setZoom(zoom);//currentZoomRef.current);
+    fabricCanvas.setZoom(zoom);
   
     fabricCanvas.renderAll();
   }
@@ -216,7 +216,7 @@ export function useFabric(options?: UseFabricOptions) {
     })
   
     canvas.backgroundImage = img;
-    // canvas.backgroundColor = "transparent";
+    canvas.backgroundColor = "transparent";
     // adjustCanvasSize(canvas, isMobile, true);
     canvas.renderAll();
 

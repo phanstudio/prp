@@ -22,6 +22,7 @@ export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) =>
       text: "postrugphotos.xyz",
       mode: "download-only", // or "disabled" or "always"
       position: "bottom-left",
+      fontSizeRatio: 0.02,
     },
   });
 

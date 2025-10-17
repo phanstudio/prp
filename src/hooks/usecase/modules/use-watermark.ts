@@ -114,7 +114,7 @@ export class WatermarkManager {
       fill: this.config.color,
       opacity: this.config.opacity,
       stroke: this.config.stroke,
-      strokeWidth: fontSize * 0.05, // 5% of font size for proportional outline
+      strokeWidth: fontSize * 0.1, // 5% of font size for proportional outline
       paintFirst: "stroke",
       selectable: false,
       evented: false,
