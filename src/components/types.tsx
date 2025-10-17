@@ -66,7 +66,7 @@ export interface WatermarkOptions {
 export type WatermarkMode = "download-only" | "always" | "none";
 
 export const DefualtTextSettings = {
-  fontFamily: "Imapact",
+  fontFamily: "Impact",
   textColor: "#ffffff",
   fontSize: 32,
   shadowColor: "#000000",
