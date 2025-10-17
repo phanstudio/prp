@@ -294,6 +294,11 @@ export function useFabric(options?: UseFabricOptions) {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return
 
+    // 1️⃣ Temporarily remove outlines before rendering the image
+    // const outlines = canvas.getObjects().filter((obj: any) => obj.data?.isOutline);
+    // outlines.forEach((outline) => canvas.remove(outline));
+    // canvas.requestRenderAll();
+
     // Prepare watermark for download
     await watermarkManagerRef.current?.prepareForDownload()
 
@@ -312,6 +317,9 @@ export function useFabric(options?: UseFabricOptions) {
 
     // Clean up watermark after download
     watermarkManagerRef.current?.cleanupAfterDownload()
+    // 6️⃣ Re-add outlines after download (only if mouse is inside canvas)
+    // outlines.forEach((outline) => canvas.add(outline));
+    // canvas.requestRenderAll();
   }
 
   function updateWatermark(config: Partial<WatermarkConfig>) {
