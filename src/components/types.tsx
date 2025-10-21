@@ -71,7 +71,7 @@ export const DefualtTextSettings = {
   textColor: "#ffffff",
   fontSize: 32,
   shadowColor: "#000000",
-  outlineStrokeWidth: 2,
+  outlineStrokeWidth: 3,
   outlineStrokeColor: "#000000",
   shadowOpacity: 0.75,
   shadowBlur: 10,

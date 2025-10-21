@@ -103,13 +103,15 @@ const TextEditor: React.FC<TextEditorProps> = (
           </button>
 
           <button
-          className={`btn btn-xs ${(currentTextProps?.allCaps || element?.allCaps) ? "btn-primary" : "btn-ghost"}`}
-          onClick={() =>
-            updateProperty({ allCaps: !currentTextProps?.allCaps })
-          }
-        >
-          Aa
-        </button>
+            className={`btn btn-xs ${
+              (currentTextProps?.allCaps || (element?.text == element?.text?.toUpperCase())
+            ) ? "btn-primary" : "btn-ghost"}`}
+            onClick={() =>
+              updateProperty({ allCaps: !currentTextProps?.allCaps })
+            }
+          >
+            Aa
+          </button>
 
         </div>
       </div>

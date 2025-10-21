@@ -188,6 +188,16 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                           >
                             <u>U</u>
                           </button>
+                          <button
+                            className={`btn btn-xs ${
+                              (currentTextProps?.allCaps || (element.text == element.text.toUpperCase())
+                            ) ? "btn-primary" : "btn-ghost"}`}
+                            onClick={() =>
+                              updateProperty({ allCaps: !currentTextProps?.allCaps })
+                            }
+                          >
+                            Aa
+                          </button>
                           {/* TODO: Add linethrough support - uncomment when ready */}
                           {/* <button
                             className={`btn btn-xs ${currentTextProps.linethrough ? "btn-primary" : "btn-ghost"}`}
