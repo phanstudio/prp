@@ -136,9 +136,15 @@ export class WatermarkManager {
   private positionWatermark(watermark: FabricText) {
     if (!this.canvas) return
 
-    const padding = this.calculatePadding()
-    const canvasWidth = this.canvas.getWidth()
-    const canvasHeight = this.canvas.getHeight()
+    // const padding = this.calculatePadding()
+    // const canvasWidth = this.canvas.getWidth()
+    // const canvasHeight = this.canvas.getHeight()
+    // will have issues with zoom, either remove and add back or find a better solution
+
+    const zoom = this.canvas.getZoom() || 1
+    const padding = this.calculatePadding() / zoom // scale padding to match zoom
+    const canvasWidth = this.canvas.getWidth() / zoom
+    const canvasHeight = this.canvas.getHeight() / zoom
 
     switch (this.config.position) {
       case "bottom-right":

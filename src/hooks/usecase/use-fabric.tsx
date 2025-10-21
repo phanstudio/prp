@@ -1,9 +1,9 @@
 import { useRef, useEffect, useState } from "react";
-import { Canvas, Textbox, FabricImage, FabricObject } from "fabric";
+import { Canvas, Textbox, FabricImage } from "fabric";
 import { createTextManager } from "../../hooks/usecase/text-manager";
 import { CanvasFileGenerator, type CanvasFileOptions } from "./modules/canvas-file-generator"
 import { WatermarkManager, type WatermarkConfig } from "./modules/use-watermark"
-import { enableTextboxHoverOutline } from "./modules/textbox-hover-outline"
+import { enableTextboxHoverOutline, type OutlineManger } from "./modules/textbox-hover-outline"
 import { makeTextboxResizable } from "./modules/fixed-size-textbox"
 import { deserializeTextElement } from "../../utilities/deserializeTextElements";
 import { useWindow } from "./use-window"
@@ -45,6 +45,8 @@ export function useFabric(options?: UseFabricOptions) {
   const [baseCanvasSize, setBaseCanvasSize] = useState<CanvasSize>(BASE_CANVAS_SIZE);
   const currentZoomRef = useRef(1); 
 
+  const outlineManagerRef = useRef<OutlineManger>(null);
+
   // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -84,12 +86,12 @@ export function useFabric(options?: UseFabricOptions) {
       watermarkManagerRef.current
     )
     fileGeneratorRef.current = fileGenerator
-    const cleanupOutline = enableTextboxHoverOutline(canvas)
+    outlineManagerRef.current = enableTextboxHoverOutline(canvas)
 
     return () => {
       watermarkManagerRef.current?.dispose()
       textManagerRef.current.dispose();
-      cleanupOutline()
+      outlineManagerRef.current?.destroy();
       canvas.dispose();
     };
   }, []);
@@ -293,6 +295,11 @@ export function useFabric(options?: UseFabricOptions) {
   async function downloadCanvas() {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return
+    
+    if (outlineManagerRef.current){
+      outlineManagerRef.current.removeOutlineAndHover();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
 
     // Prepare watermark for download
     await watermarkManagerRef.current?.prepareForDownload()
@@ -322,6 +329,10 @@ export function useFabric(options?: UseFabricOptions) {
     options?: CanvasFileOptions,
     includeWatermark: boolean = true
   ): Promise<{ background: File | null; edited: File | null }> {
+    if (outlineManagerRef.current){
+      outlineManagerRef.current.removeOutlineAndHover();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
     return (
       fileGeneratorRef.current?.saveFiles(options, includeWatermark) || {
         background: null,

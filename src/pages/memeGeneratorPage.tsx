@@ -20,7 +20,7 @@ export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) =>
   } = useFabric({
     watermarkConfig: {
       text: "postrugphotos.xyz",
-      mode: "download-only", // or "disabled" or "always"
+      mode: "always",//"download-only", // or "disabled" or "always"
       position: "bottom-left",
       fontSizeRatio: 0.02,
     },

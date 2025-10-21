@@ -30,6 +30,7 @@ export interface TextElement {
 
   width:number;
   height:number;
+  allCaps?: boolean;
 }
 
 export interface Template {

@@ -25,6 +25,7 @@ export interface TextProperties {
   strokeWidth?: number
 
   maxFontSize?: number
+  allCaps?: boolean
 }
 
 export class TextManager {
@@ -116,6 +117,7 @@ export class TextManager {
       strokeColor: this.selectedText.stroke as string || "#000000",
       strokeWidth: this.selectedText.strokeWidth || 2,
       maxFontSize: (this.selectedText as any)._maxFontSize || this.selectedText.fontSize,
+      allCaps: this.selectedText.text === this.selectedText.text?.toUpperCase(),
     }
   }
 
@@ -297,11 +299,21 @@ export class TextManager {
         properties.fontFamily !== undefined || properties.fontWeight !== undefined || properties.strokeWidth !== undefined) {
       (this.selectedText as any)._autoShrinkIfNeeded?.();
     }
-    // this.canvas.renderAll()
-    // if (properties.text !== undefined) {
-    //   (this.selectedText as any)._autoShrinkIfNeeded?.();
-    //   // this.canvas.requestRenderAll();
-    // }
+
+    if (properties.allCaps !== undefined && this.selectedText.text) {
+      let saveText = this.selectedText.text;
+      if (this.selectedText.text == this.selectedText.text.toUpperCase())
+        {saveText = this.selectedText.text}
+      const original = (this.selectedText as any)._originalText || saveText;
+      
+      if (properties.allCaps) {
+        (this.selectedText as any)._originalText = original; // this back in the duplicate
+        this.selectedText.set({ text: original.toUpperCase() });
+      } else {
+        this.selectedText.set({ text: original });
+      }
+    }    
+
     this.canvas.requestRenderAll();
     return true
   }

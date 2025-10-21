@@ -9,6 +9,13 @@ interface OutlineOptions {
   opacity?: number
 }
 
+export interface OutlineManger {
+  clearOutlines: () => void;
+  showOutlines: () => void;
+  destroy: () => void;
+  removeOutlineAndHover: () => void;
+}
+
 /**
  * Adds temporary bounding-box outlines to all textboxes
  * whenever the mouse is inside the canvas.
@@ -57,6 +64,8 @@ export function enableTextboxHoverOutline(
   function showOutlines() {
     if (isUpdating) return
     isUpdating = true
+
+    console.log()
     
     clearOutlines()
     canvas.getObjects().forEach((obj) => {
@@ -82,6 +91,11 @@ export function enableTextboxHoverOutline(
     outlines.forEach((outline) => canvas.remove(outline))
     outlines.clear()
     canvas.requestRenderAll()
+  }
+
+  function removeOutlineAndHover() {
+    isMouseOverCanvas = false;
+    clearOutlines();
   }
 
   function hideOutlineFor(textbox: Textbox) {
@@ -158,17 +172,21 @@ export function enableTextboxHoverOutline(
   canvas.on("object:removed", handleObjectChange)
   canvas.on("object:added", handleObjectChange)
 
-  // Cleanup when disposing
-  return () => {
-    clearOutlines()
-    canvas.off("mouse:move", handleMouseMove)
-    canvas.off("mouse:out", handleMouseOut)
-    canvas.off("object:moving", handleTransformStart)
-    canvas.off("object:scaling", handleTransformStart)
-    canvas.off("object:rotating", handleTransformStart)
-    canvas.off("object:resizing", handleTransformStart) // Clean up the new listener
-    canvas.off("object:modified", handleTransformEnd)
-    canvas.off("object:removed", handleObjectChange)
-    canvas.off("object:added", handleObjectChange)
+  return {
+    clearOutlines,
+    showOutlines,
+    removeOutlineAndHover,
+    destroy() {
+      clearOutlines()
+      canvas.off("mouse:move", handleMouseMove)
+      canvas.off("mouse:out", handleMouseOut)
+      canvas.off("object:moving", handleTransformStart)
+      canvas.off("object:scaling", handleTransformStart)
+      canvas.off("object:rotating", handleTransformStart)
+      canvas.off("object:resizing", handleTransformStart)
+      canvas.off("object:modified", handleTransformEnd)
+      canvas.off("object:removed", handleObjectChange)
+      canvas.off("object:added", handleObjectChange)
+    },
   }
 }

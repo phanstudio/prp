@@ -101,9 +101,19 @@ const TextEditor: React.FC<TextEditorProps> = (
           >
             <u>U</u>
           </button>
+
+          <button
+          className={`btn btn-xs ${(currentTextProps?.allCaps || element?.allCaps) ? "btn-primary" : "btn-ghost"}`}
+          onClick={() =>
+            updateProperty({ allCaps: !currentTextProps?.allCaps })
+          }
+        >
+          Aa
+        </button>
+
         </div>
       </div>
-
+      
       {/* Text Alignment */}
       <div>
         <label className="label-text text-xs mb-1 block">Alignment</label>
