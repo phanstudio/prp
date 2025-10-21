@@ -303,7 +303,7 @@ export class TextManager {
     if (properties.allCaps !== undefined && this.selectedText.text) {
       let saveText = this.selectedText.text;
       if (this.selectedText.text == this.selectedText.text.toUpperCase())
-        {saveText = this.selectedText.text}
+        {saveText = this.selectedText.text.toLowerCase()}
       const original = (this.selectedText as any)._originalText || saveText;
       
       if (properties.allCaps) {
