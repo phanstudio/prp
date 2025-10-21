@@ -1,7 +1,7 @@
 import React from "react";
 import { DefualtTextSettings } from "../types";
 import FontSelector from "../main/FontSelector";
-import type { TextProperties } from "../../hooks/usecase/text-manager";
+import type { TextProperties, TextManager } from "../../hooks/usecase/text-manager";
 import { TextEffectsPanel } from "../TextEffectsPanel";
 
 // Text Editor Component
@@ -10,10 +10,11 @@ interface TextEditorProps {
   currentTextProps: TextProperties | null
   updateProperty: (props: Partial<TextProperties>) => void;
   onDelete: () => void;
+  textManager: TextManager|null;
 }
 
 const TextEditor: React.FC<TextEditorProps> = (
-  { element, updateProperty, onDelete, currentTextProps }) => {
+  { element, updateProperty, onDelete, currentTextProps, textManager }) => {
   console.log(element?.fontFamily);
   // if (!element || !currentTextProps) {
   //   return (
@@ -135,6 +136,13 @@ const TextEditor: React.FC<TextEditorProps> = (
         onChange={(font) => updateProperty({ fontFamily: font })}
       />
       
+      <button
+        onClick={textManager?.duplicateSelectedText}
+        className="btn w-full btn-info text-sm"
+      >
+        Duplicate Text
+      </button>
+
       <button
         onClick={onDelete}
         className="btn w-full btn-error text-sm"

@@ -119,6 +119,38 @@ export class TextManager {
     }
   }
 
+  duplicateSelectedText = async (): Promise<null> => {
+    if (!this.selectedText || !this.canvas) return null
+
+    // Clone the selected text with all its properties
+    const clone = await this.selectedText.clone() as Textbox
+    
+    // Offset the duplicate slightly
+    clone.set({
+      left: (this.selectedText.left || 0) + 20,
+      top: (this.selectedText.top || 0) + 20,
+    })
+
+    // Generate new ID for the duplicate
+    ;(clone as any).id = Date.now().toString() + Math.random()
+    ;(clone as any)._maxFontSize = (this.selectedText as any)._maxFontSize
+
+    // Make the duplicate resizable
+    makeTextboxResizable(clone, this.canvas)
+
+    clone.set({
+      width: this.selectedText.width,
+      height: this.selectedText.height,
+    });
+
+    // Add to canvas
+    this.canvas.add(clone)
+    this.canvas.setActiveObject(clone)
+    this.canvas.requestRenderAll()
+
+    return null
+  }
+
   /**
    * Parse opacity from rgba color string
    */
@@ -331,56 +363,6 @@ export class TextManager {
       })
   }
 
-
-  // getAllTextElements(): any[] {
-  //   if (!this.canvas) return []
-  
-  //   return this.canvas.getObjects()
-  //     .filter((obj) => obj instanceof fabric.Textbox)
-  //     .map((obj) => {
-  //       const textbox = obj as Textbox
-  //       const shadow = textbox.shadow as Shadow | null
-
-  //       const hasStroke = (textbox.strokeWidth || 0) > 0
-  //       const hasShadow = shadow !== null
-
-  //       let effectType: TextEffectType = "none"
-  //       if (hasStroke) effectType = "outline"
-  //       else if (hasShadow) effectType = "shadow"
-        
-  //       return {
-  //         id: (textbox as any).id,
-  //         text: textbox.text,
-  //         x: textbox.left,
-  //         y: textbox.top,
-  //         fontSize: textbox.fontSize,
-  //         fontFamily: textbox.fontFamily,
-  //         fill: textbox.fill,
-  //         textAlign: textbox.textAlign,
-  //         fontWeight: textbox.fontWeight,
-  //         fontStyle: textbox.fontStyle,
-  //         underline: textbox.underline,
-  //         linethrough: textbox.linethrough,
-  //         rotation: textbox.angle,
-  //         width: textbox.width,
-  //         effectType: effectType,
-  //         height: textbox.height,
-  //         _maxFontSize: (textbox as any)._maxFontSize ?? textbox.fontSize,
-  //         // Outline properties
-  //         stroke: textbox.stroke,
-  //         strokeWidth: textbox.strokeWidth,
-  //         strokeLineJoin: textbox.strokeLineJoin,
-  //         strokeLineCap: textbox.strokeLineCap,
-  //         // Shadow properties
-  //         shadow: shadow ? {
-  //           color: shadow.color,
-  //           blur: shadow.blur,
-  //           offsetX: shadow.offsetX,
-  //           offsetY: shadow.offsetY,
-  //         } : null,
-  //       }
-  //     })
-  // }
 
   /**
    * Check if there's a selected text object

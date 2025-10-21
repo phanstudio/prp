@@ -3,7 +3,7 @@ import React from "react";
 import type { TextElement } from "../types";
 import TextEditor from "./texteditor";
 import { Bolt } from "lucide-react";
-import type { TextProperties } from "../../hooks/usecase/text-manager";
+import type { TextProperties, TextManager } from "../../hooks/usecase/text-manager";
 
 
 interface TextElementListProps {
@@ -12,7 +12,8 @@ interface TextElementListProps {
   setSelectedElement: (id: string|null) => void;
   updateProperty: (props: Partial<TextProperties>) => void;
   deleteSelectedElement: () => void;
-  currentTextProps: TextProperties | null
+  currentTextProps: TextProperties | null;
+  textManager: TextManager| null;
 }
 
 const TextElementList: React.FC<TextElementListProps> = ({
@@ -21,7 +22,8 @@ const TextElementList: React.FC<TextElementListProps> = ({
   setSelectedElement,
   updateProperty,
   deleteSelectedElement,
-  currentTextProps
+  currentTextProps,
+  textManager,
 }) => {
   return (
     <div className="space-y-2 max-h-60 overflow-y-auto p-2">
@@ -86,6 +88,7 @@ const TextElementList: React.FC<TextElementListProps> = ({
                 currentTextProps={currentTextProps}
                 updateProperty={updateProperty}
                 onDelete={deleteSelectedElement}
+                textManager={textManager}
               />
             </div>
             

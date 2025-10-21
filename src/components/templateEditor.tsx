@@ -230,6 +230,13 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                       />
 
                       <button
+                        onClick={textManager.duplicateSelectedText}
+                        className="btn w-full btn-info text-sm"
+                      >
+                        Duplicate Text
+                      </button>
+
+                      <button
                         onClick={deleteSelectedElement}
                         className="btn btn-xs btn-error w-full"
                       >

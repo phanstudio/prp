@@ -59,6 +59,7 @@ const TextPanel: React.FC<TextPanelProps> = ({
         updateProperty={updateProperty}
         deleteSelectedElement={deleteSelectedElement}
         currentTextProps={currentTextProps}
+        textManager={textManager}
       />
       
       <div className="flex flex-col sm:text-center text-left">

@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { Canvas, Textbox, FabricImage } from "fabric";
+import { Canvas, Textbox, FabricImage, FabricObject } from "fabric";
 import { createTextManager } from "../../hooks/usecase/text-manager";
 import { CanvasFileGenerator, type CanvasFileOptions } from "./modules/canvas-file-generator"
 import { WatermarkManager, type WatermarkConfig } from "./modules/use-watermark"
@@ -294,11 +294,6 @@ export function useFabric(options?: UseFabricOptions) {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return
 
-    // 1️⃣ Temporarily remove outlines before rendering the image
-    const outlines = canvas.getObjects().filter((obj: any) => obj.data?.isOutline);
-    outlines.forEach((outline) => canvas.remove(outline));
-    canvas.requestRenderAll();
-
     // Prepare watermark for download
     await watermarkManagerRef.current?.prepareForDownload()
 
@@ -316,10 +311,7 @@ export function useFabric(options?: UseFabricOptions) {
     document.body.removeChild(link)
 
     // Clean up watermark after download
-    watermarkManagerRef.current?.cleanupAfterDownload()
-    // 6️⃣ Re-add outlines after download (only if mouse is inside canvas)
-    outlines.forEach((outline) => canvas.add(outline));
-    canvas.requestRenderAll();
+    watermarkManagerRef.current?.cleanupAfterDownload();
   }
 
   function updateWatermark(config: Partial<WatermarkConfig>) {
@@ -361,6 +353,6 @@ export function useFabric(options?: UseFabricOptions) {
     loadTemplate,
     saveFiles,
     updateWatermark,
-    downloadCanvas,
+    downloadCanvas
   };
 }
