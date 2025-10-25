@@ -26,6 +26,7 @@ const FontSelector: React.FC<FontSelectorProps> = ({ value, onChange }) => {
   useEffect(() => {
     if (initRef.current) return
     if (value && !isFontLoaded(value)) {
+      console.log(value);
       ensureFontLoaded(value).then(() => {
         onChange(value);
         forceUpdate(prev => prev + 1);

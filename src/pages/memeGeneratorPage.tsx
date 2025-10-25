@@ -44,27 +44,6 @@ export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) =>
     setSelectedElement(null);
   };
 
-  // const handleSaveMeme = async () => {
-  //   const { edited } = await saveFiles();
-  //   if (!edited) return;
-
-  //   const elements = serializeTextElements(textManager.getAllTextElements());
-  //   console.log("Meme exported:", {
-  //     name: template.name,
-  //     image: edited,
-  //     textElements: elements,
-  //   });
-
-  //   // Optionally trigger a download (you can also call canvasRef.current?.saveImage())
-  //   canvasRef.current?.toBlob((blob) => {
-  //     if (!blob) return;
-  //     const link = document.createElement("a");
-  //     link.href = URL.createObjectURL(blob);
-  //     link.download = `${toTitleCase(template.name)}.png`;
-  //     link.click();
-  //   });
-  // };
-
   return (
     <div className="p-0 lg:p-4 md:p-4 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-4 text-center">Meme Generator</h1>

@@ -93,10 +93,12 @@ export class TextManager {
     const shadow = this.selectedText.shadow as Shadow | null
     const hasStroke = (this.selectedText.strokeWidth || 0) > 0
     const hasShadow = shadow !== null
+    const hasNewShadow = (this.selectedText as any)._newShadow === true
 
     let effectType: TextEffectType = "none"
     if (hasStroke) effectType = "outline"
     else if (hasShadow) effectType = "shadow"
+    if (hasNewShadow) effectType = "newShadow"
 
     return {
       text: this.selectedText.text,
@@ -188,6 +190,11 @@ export class TextManager {
   private applyShadow(properties: TextProperties) {
     if (!this.selectedText) return
 
+    if ((this.selectedText as any)._originalRender) {
+      (this.selectedText as any)._render = (this.selectedText as any)._originalRender;
+    }
+    (this.selectedText as any)._newShadow = null
+
     const shadowColor = this.colorWithOpacity(
       properties.shadowColor || "#000000",
       properties.shadowOpacity || 0.75
@@ -207,19 +214,52 @@ export class TextManager {
   }
 
   /**
+   * Apply outlin blur effect to selected text
+   */
+  private applyNewShadow(properties: TextProperties) {
+    if (!this.selectedText) return
+
+    if ((this.selectedText as any)._newShadow !== true){
+      properties.strokeColor = DefualtTextSettings.outlineStrokeColor;
+      properties.strokeWidth = DefualtTextSettings.shadowStrokeWidth;
+    }
+
+    applyNewShad(
+      this.selectedText, 
+      properties.strokeColor || DefualtTextSettings.outlineStrokeColor,
+      properties.strokeWidth || DefualtTextSettings.shadowStrokeWidth
+    );
+  }
+
+  /**
    * Apply outline effect to selected text
    */
   private applyOutline(properties: TextProperties) {
     if (!this.selectedText) return
 
-    this.selectedText.set({
-      stroke: properties.strokeColor || DefualtTextSettings.outlineStrokeColor,
-      strokeWidth: properties.strokeWidth || DefualtTextSettings.outlineStrokeWidth,
-      strokeLineJoin: "round",
-      strokeLineCap: "round",
-      paintFirst: DefualtTextSettings.paintFirst,
-      shadow: null,
-    })
+    if ((this.selectedText as any)._newShadow === true){
+      properties.strokeColor = DefualtTextSettings.outlineStrokeColor;
+      properties.strokeWidth = DefualtTextSettings.outlineStrokeWidth;
+    }
+
+    if ((this.selectedText as any)._originalRender) {
+      (this.selectedText as any)._render = (this.selectedText as any)._originalRender;
+    }
+    (this.selectedText as any)._newShadow = null
+
+    // this.selectedText.set({
+    //   stroke: properties.strokeColor || DefualtTextSettings.outlineStrokeColor,
+    //   strokeWidth: properties.strokeWidth || DefualtTextSettings.outlineStrokeWidth,
+    //   strokeLineJoin: "round",
+    //   strokeLineCap: "round",
+    //   paintFirst: DefualtTextSettings.paintFirst,
+    //   shadow: null,
+    // })
+    applyNewOutline(
+      this.selectedText, 
+      properties.strokeColor || DefualtTextSettings.outlineStrokeColor, 
+      properties.strokeWidth || DefualtTextSettings.outlineStrokeWidth
+    );
   }
 
   /**
@@ -235,6 +275,11 @@ export class TextManager {
       paintFirst: undefined,
       strokeUniform: true,
     })
+
+    if ((this.selectedText as any)._originalRender) {
+      (this.selectedText as any)._render = (this.selectedText as any)._originalRender;
+    }
+    (this.selectedText as any)._newShadow = null
   }
 
   /**
@@ -252,6 +297,9 @@ export class TextManager {
         case "outline":
           this.applyOutline(properties)
           break
+        case "newShadow":
+          this.applyNewShadow(properties)
+          break
         case "none":
           this.removeEffects()
           break
@@ -268,9 +316,11 @@ export class TextManager {
       } else if (currentProps?.effectType === "outline" && 
                  (properties.strokeColor || properties.strokeWidth !== undefined)) {
         this.applyOutline({ ...currentProps, ...properties })
+      } else if (currentProps?.effectType === "newShadow" && 
+              (properties.strokeColor || properties.strokeWidth !== undefined)) {
+        this.applyNewShadow({ ...currentProps, ...properties })
       }
     }
-    console.log(properties);
 
     // Update basic text properties
     const basicProps: any = {}
@@ -328,10 +378,12 @@ export class TextManager {
         const shadow = textbox.shadow as Shadow | null
         const hasStroke = (textbox.strokeWidth || 0) > 0
         const hasShadow = shadow !== null
+        const hasNewShadow = (textbox as any)._newShadow === true
 
         let effectType: TextEffectType = "none"
         if (hasStroke) effectType = "outline"
         else if (hasShadow) effectType = "shadow"
+        if (hasNewShadow) effectType = "newShadow"
         
         const result: any = {
           id: (textbox as any).id,
@@ -351,10 +403,18 @@ export class TextManager {
           effectType: effectType,
           height: textbox.height,
           _maxFontSize: (textbox as any)._maxFontSize ?? textbox.fontSize,
+          _newShadow: (textbox as any)._newShadow,
         }
 
         // Only include outline properties if effect type is outline
         if (effectType === "outline") {
+          result.stroke = textbox.stroke
+          result.strokeWidth = textbox.strokeWidth
+          result.strokeLineJoin = textbox.strokeLineJoin
+          result.strokeLineCap = textbox.strokeLineCap
+        }
+
+        if (effectType === "newShadow") {
           result.stroke = textbox.stroke
           result.strokeWidth = textbox.strokeWidth
           result.strokeLineJoin = textbox.strokeLineJoin
@@ -397,6 +457,59 @@ export class TextManager {
     this.selectedText = null
     this.selectionChangeCallback = null
   }
+}
+
+function applyNewOutline(selectedText: Textbox, strokeColor:string , strokeWidth: number){
+  selectedText.set({
+    stroke: strokeColor,
+    strokeWidth: strokeWidth,
+    strokeLineJoin: "round",
+    strokeLineCap: "round",
+    paintFirst: DefualtTextSettings.paintFirst,
+    shadow: null,
+  });
+}
+
+export function applyNewShad(selectedText: Textbox, strokeColor:string , strokeWidth: number){
+  applyNewOutline(selectedText, strokeColor, strokeWidth);
+  // Store original render if not already stored
+  if (!(selectedText as any)._originalRender) {
+    (selectedText as any)._originalRender = (selectedText as any)._render.bind(selectedText);
+  }
+  (selectedText as any)._newShadow = true
+
+  // Override render to apply blur filter to stroke
+  const originalRender = (selectedText as any)._render.bind(selectedText);
+  (selectedText as any)._render = function(ctx: CanvasRenderingContext2D) {
+    // Save the current state
+    ctx.save();
+    
+    // Apply blur filter
+    ctx.filter = `blur(${(strokeWidth)/2}px)`;
+    
+    // Render only the stroke
+    const tempFill = this.fill;
+    this.fill = 'transparent';
+    originalRender(ctx);
+    this.fill = tempFill;
+    
+    // Reset filter and render the fill
+    ctx.filter = 'none';
+    const tempStroke = this.stroke;
+    this.stroke = 'transparent';
+    originalRender(ctx);
+    this.stroke = tempStroke;
+    
+    ctx.restore();
+  };
+}
+
+export function applydefualt(selectedText: Textbox) {
+  applyNewShad(
+    selectedText, 
+    DefualtTextSettings.outlineStrokeColor, 
+    DefualtTextSettings.shadowStrokeWidth
+  );
 }
 
 /**

@@ -3,6 +3,7 @@ import { DefualtTextSettings } from "../types";
 import FontSelector from "../main/FontSelector";
 import type { TextProperties, TextManager } from "../../hooks/usecase/text-manager";
 import { TextEffectsPanel } from "../TextEffectsPanel";
+import { Trash2Icon, Copy } from "lucide-react";
 
 // Text Editor Component
 interface TextEditorProps {
@@ -15,7 +16,6 @@ interface TextEditorProps {
 
 const TextEditor: React.FC<TextEditorProps> = (
   { element, updateProperty, onDelete, currentTextProps, textManager }) => {
-  console.log(element?.fontFamily);
   // if (!element || !currentTextProps) {
   //   return (
   //     <div className="text-gray-500 text-sm text-center py-4">
@@ -148,19 +148,21 @@ const TextEditor: React.FC<TextEditorProps> = (
         onChange={(font) => updateProperty({ fontFamily: font })}
       />
       
-      <button
-        onClick={textManager?.duplicateSelectedText}
-        className="btn w-full btn-info text-sm"
-      >
-        Duplicate Text
-      </button>
+      <div className="join w-full">
+        <button
+          onClick={textManager?.duplicateSelectedText}
+          className="btn btn-info text-sm join-item"
+        >
+          <Copy size={16}/>
+        </button>
 
-      <button
-        onClick={onDelete}
-        className="btn w-full btn-error text-sm"
-      >
-        Delete This Text
-      </button>
+        <button
+          onClick={onDelete}
+          className="btn btn-error text-sm join-item"
+        >
+          <Trash2Icon size={16}/>
+        </button>
+      </div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 // Types
 export type TextAlignType = "left" | "center" | "right" | "justify"
 export type FontStyleType = "normal" | "italic" | "oblique"
-export type TextEffectType = "none" | "shadow" | "outline"
+export type TextEffectType = "none" | "shadow" | "outline" | "newShadow"
 
 export interface TextElement {
   id: string;
@@ -78,4 +78,5 @@ export const DefualtTextSettings = {
   shadowOffsetX: -1,// 5
   shadowOffsetY: 1,// 5
   paintFirst: "stroke" as "fill" | "stroke" | undefined,
+  shadowStrokeWidth: 5,
 }

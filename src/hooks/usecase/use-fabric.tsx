@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { Canvas, Textbox, FabricImage } from "fabric";
-import { createTextManager } from "../../hooks/usecase/text-manager";
+import { createTextManager, applydefualt } from "../../hooks/usecase/text-manager";
 import { CanvasFileGenerator, type CanvasFileOptions } from "./modules/canvas-file-generator"
 import { WatermarkManager, type WatermarkConfig } from "./modules/use-watermark"
 import { enableTextboxHoverOutline, type OutlineManger } from "./modules/textbox-hover-outline"
@@ -238,13 +238,8 @@ export function useFabric(options?: UseFabricOptions) {
       fill: DefualtTextSettings.textColor,
       fontFamily: DefualtTextSettings.fontFamily,
       textAlign: "center",
-      strokeWidth: DefualtTextSettings.outlineStrokeWidth,
-      stroke: DefualtTextSettings.outlineStrokeColor,
-      strokeLineJoin: "round",
-      strokeLineCap: "round",
-      paintFirst: DefualtTextSettings.paintFirst,
-      strokeUniform: false
     });
+    applydefualt(textBox);
 
     (textBox as any).id = Date.now().toString() + Math.random();
     makeTextboxResizable(textBox, canvas)

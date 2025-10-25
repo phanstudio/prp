@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Edit3, Trash2, Download } from "lucide-react";
+import { Plus, Edit3, Trash2Icon, Copy, Download } from "lucide-react";
 import type { TextProperties, TextManager } from "../hooks/usecase/text-manager";
 import FontSelector from "./main/FontSelector";
 import { useTemplateInfo } from "../hooks/useTemplateInfo"
@@ -239,20 +239,21 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                         updateProperty={updateProperty}
                       />
 
-                      <button
-                        onClick={textManager.duplicateSelectedText}
-                        className="btn w-full btn-info text-sm"
-                      >
-                        Duplicate Text
-                      </button>
+                      <div className="join w-full">
+                        <button
+                          onClick={textManager?.duplicateSelectedText}
+                          className="btn btn-info text-sm join-item"
+                        >
+                          <Copy size={16}/>
+                        </button>
 
-                      <button
-                        onClick={deleteSelectedElement}
-                        className="btn btn-xs btn-error w-full"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        Delete Element
-                      </button>
+                        <button
+                          onClick={deleteSelectedElement}
+                          className="btn btn-error text-sm join-item"
+                        >
+                          <Trash2Icon size={16}/>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

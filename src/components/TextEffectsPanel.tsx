@@ -15,20 +15,20 @@ interface TextEffectsPanelProps {
   updateProperty: (props: Partial<TextEffectsPanelProps["currentTextProps"]>) => void;
 }
 
-function rgbaToHex(rgba: string|undefined) {
-  if  (!rgba) return "#000000";
-  if (rgba.startsWith("#")) return rgba
-  const result = rgba.match(/\d+/g);
-  if (!result) return "#000000";
-  const [r, g, b] = result.map(Number);
-  return (
-    "#" +
-    [r, g, b]
-      .map((x) => x.toString(16).padStart(2, "0"))
-      .join("")
-      .toUpperCase()
-  );
-}
+// function rgbaToHex(rgba: string|undefined) {
+//   if  (!rgba) return "#000000";
+//   if (rgba.startsWith("#")) return rgba
+//   const result = rgba.match(/\d+/g);
+//   if (!result) return "#000000";
+//   const [r, g, b] = result.map(Number);
+//   return (
+//     "#" +
+//     [r, g, b]
+//       .map((x) => x.toString(16).padStart(2, "0"))
+//       .join("")
+//       .toUpperCase()
+//   );
+// }
 
 
 export const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
@@ -41,21 +41,53 @@ export const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
 
       {/* Effect Type Buttons */}
       <div className="flex gap-2 mb-2">
-        {(["none", "shadow", "outline"] as TextEffectType[]).map((effect) => (
+        {(["none", "newShadow", "outline"] as TextEffectType[]).map((effect) => (
           <button
             key={effect}
             className={`btn btn-xs ${
               currentTextProps.effectType === effect ? "btn-primary" : "btn-ghost"
             }`}
-            onClick={() => updateProperty({ effectType: effect })}
+            // onClick={() => updateProperty({ effectType: effect })}
+            onClick={() => {
+              let resetProps: Partial<TextEffectsPanelProps["currentTextProps"]> = {}
+      
+              // Reset defaults when switching effect type
+              if (effect === "outline") {
+                resetProps = {
+                  strokeColor: DefualtTextSettings.outlineStrokeColor,
+                  strokeWidth: DefualtTextSettings.outlineStrokeWidth,
+                }
+              } else if (effect === "newShadow") {
+                resetProps = {
+                  strokeColor: DefualtTextSettings.outlineStrokeColor,
+                  strokeWidth: DefualtTextSettings.shadowStrokeWidth,
+                }
+              } else if (effect === "none") {
+                resetProps = {
+                  strokeColor: undefined,
+                  strokeWidth: undefined,
+                  shadowColor: undefined,
+                  shadowBlur: undefined,
+                  shadowOffsetX: undefined,
+                  shadowOffsetY: undefined,
+                  shadowOpacity: undefined,
+                }
+              }
+      
+              // Merge effectType + defaults
+              updateProperty({
+                effectType: effect,
+                ...resetProps,
+              })
+            }}
           >
-            {effect.charAt(0).toUpperCase() + effect.slice(1)}
+            {effect.charAt(0).replace("newShadow", "shadow").toUpperCase() + effect.slice(1)}
           </button>
         ))}
       </div>
 
       {/* --- SHADOW CONTROLS --- */}
-      {currentTextProps.effectType === "shadow" && (
+      {/* {currentTextProps.effectType === "shadow" && (
         <div className="space-y-2 p-2 bg-base-200 rounded">
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -132,6 +164,39 @@ export const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
               />
               <div className="text-xs text-center">
                 {currentTextProps.shadowOffsetY}px
+              </div>
+            </div>
+          </div>
+        </div>
+      )} */}
+
+      {/* --- OUTLINE SHADOW CONTROLS --- */}
+      {currentTextProps.effectType === "newShadow" && (
+        <div className="space-y-2 p-2 bg-base-200 rounded">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="label-text text-xs">Shad-Outline Color</label>
+              <input
+                type="color"
+                className="input input-xs input-bordered w-full h-8"
+                value={currentTextProps.strokeColor || DefualtTextSettings.outlineStrokeColor}
+                onChange={(e) => updateProperty({ strokeColor: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label-text text-xs">Shad-Width</label>
+              <input
+                type="range"
+                min="1"
+                max="20"
+                className="range range-xs"
+                value={currentTextProps.strokeWidth ?? DefualtTextSettings.shadowStrokeWidth}
+                onChange={(e) =>
+                  updateProperty({ strokeWidth: parseInt(e.target.value) })
+                }
+              />
+              <div className="text-xs text-center">
+                {currentTextProps.strokeWidth}px
               </div>
             </div>
           </div>

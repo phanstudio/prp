@@ -2,6 +2,8 @@ import { Textbox, Shadow, type Canvas } from "fabric";
 import { makeTextboxResizable } from "../hooks/usecase/modules/fixed-size-textbox";
 import { DefualtTextSettings } from "../components/types";
 import { ensureFontLoaded } from "../utilities/fontLoader";
+import { applyNewShad } from "../hooks/usecase/text-manager";
+
 /**
  * Normalize rotation angle to within -180° → 180°
  */
@@ -33,6 +35,13 @@ export function deserializeTextElement(el: any, canvas: Canvas): Textbox {
   const outlineWidth = shouldApplyOutline 
     ? safeNumber(el.strokeWidth ?? el.outlineSize, 2)
     : 0
+  const shouldApplyNewShad = effectType === "newShadow"
+  const shadWidth = shouldApplyNewShad 
+    ? safeNumber(el.strokeWidth ?? el.outlineSize, 2)
+    : 0.1
+  const shadStroke = shouldApplyNewShad 
+  ? (el.stroke || el.outlineColor || DefualtTextSettings.outlineStrokeColor)
+  : undefined
   
   // Determine if we should apply shadow based on effectType
   const shouldApplyShadow = effectType === "shadow"
@@ -76,6 +85,10 @@ export function deserializeTextElement(el: any, canvas: Canvas): Textbox {
     // Shadow (if any)
     shadow: shadowConfig,
   });
+
+  if (effectType === "newShadow"){
+    applyNewShad(textBox, shadStroke, shadWidth);
+  }
 
   // Restore custom metadata for serialization or editing
   (textBox as any).id = el.id || Date.now().toString() + Math.random();
