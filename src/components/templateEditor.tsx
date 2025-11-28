@@ -72,7 +72,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
     templateTags,
     setTemplateTags,
   } = templateInfo;
-
+  const [textValues, setTextValues] = useState<{ [id: string]: string }>({});
   return (
     <div className="space-y-6">
       {/* Text Controls */}
@@ -117,7 +117,8 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     value={isSelected ? currentTextProps?.text || "" : element.text || ""}
                     onChange={(e) => {
                       setSelectedElement(element.id);
-                      updateProperty({ text: e.target.value });
+                      setTextValues(prev => ({ ...prev, [element.id]: e.target.value }));
+                      updateProperty({ text: e.target.value, allCaps: currentTextProps?.allCaps === true });
                     }}
                     onFocus={() => setSelectedElement(element.id)}
                   />
@@ -193,7 +194,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                               (currentTextProps?.allCaps ?? (element.text == element.text.toUpperCase())
                             ) ? "btn-primary" : "btn-ghost"}`}
                             onClick={() =>
-                              updateProperty({ allCaps: !currentTextProps?.allCaps })
+                              updateProperty({ allCaps: !currentTextProps?.allCaps, text: textValues[element.id] ?? element.text })
                             }
                           >
                             Aa

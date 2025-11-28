@@ -12,10 +12,11 @@ interface TextEditorProps {
   updateProperty: (props: Partial<TextProperties>) => void;
   onDelete: () => void;
   textManager: TextManager|null;
+  textValue: string|null
 }
 
 const TextEditor: React.FC<TextEditorProps> = (
-  { element, updateProperty, onDelete, currentTextProps, textManager }) => {
+  { element, updateProperty, onDelete, currentTextProps, textManager, textValue }) => {
   // if (!element || !currentTextProps) {
   //   return (
   //     <div className="text-gray-500 text-sm text-center py-4">
@@ -107,7 +108,7 @@ const TextEditor: React.FC<TextEditorProps> = (
               (currentTextProps?.allCaps ?? (element?.text == element?.text?.toUpperCase())
             ) ? "btn-primary" : "btn-ghost"}`}
             onClick={() =>
-              updateProperty({ allCaps: !currentTextProps?.allCaps })
+              updateProperty({ allCaps: !currentTextProps?.allCaps, text: textValue??element?.text })
             }
           >
             Aa

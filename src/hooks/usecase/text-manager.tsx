@@ -351,18 +351,12 @@ export class TextManager {
     }
 
     if (properties.allCaps !== undefined && this.selectedText.text) {
-      let saveText = this.selectedText.text;
-      if (this.selectedText.text == this.selectedText.text.toUpperCase())
-        {saveText = this.selectedText.text.toLowerCase()}
-      const original = (this.selectedText as any)._originalText || saveText;
-      
       if (properties.allCaps) {
-        (this.selectedText as any)._originalText = original; // this back in the duplicate
-        this.selectedText.set({ text: original.toUpperCase() });
+        this.selectedText.set({ text: this.selectedText.text.toUpperCase() }); 
       } else {
-        this.selectedText.set({ text: original });
+        this.selectedText.set({ text: this.selectedText.text });
       }
-    }    
+    }
 
     this.canvas.requestRenderAll();
     return true

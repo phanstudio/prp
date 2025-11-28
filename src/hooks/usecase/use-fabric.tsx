@@ -8,6 +8,7 @@ import { makeTextboxResizable } from "./modules/fixed-size-textbox"
 import { deserializeTextElement } from "../../utilities/deserializeTextElements";
 import { useWindow } from "./use-window"
 import { DefualtTextSettings } from "../../components/types";
+// import { ensureFontLoaded } from "../../utilities/fontLoader";
 
 const CANVAS_DIMENSIONS = {
   default: 600,//700,
@@ -101,6 +102,7 @@ export function useFabric(options?: UseFabricOptions) {
     if (!canvas) return;
 
     adjustCanvasSize(canvas, isMobile);
+    // refreshFontsAfterResize();
     canvas.renderAll();
   }, [isMobile, windowSize.width, windowSize.height, baseCanvasSize]);
 
@@ -132,6 +134,21 @@ export function useFabric(options?: UseFabricOptions) {
     fabricCanvas.renderAll();
   }
   
+  // function refreshFontsAfterResize() {
+  //   const canvas = fabricCanvasRef.current;
+  //   if (!canvas) return;
+  
+  //   canvas.getObjects().forEach(obj => {
+  //     if (obj instanceof Textbox) {
+  //       ensureFontLoaded(obj.fontFamily);
+  //       console.log(obj);
+  //       obj.set("fontFamily", obj.fontFamily); // re-apply
+  //       // obj.initDimensions(); // recompute text metrics
+  //     }
+  //   });
+  //   canvas.requestRenderAll();
+  // }
+
   // Update text elements list from canvas
   const updateTextElementsList = () => {
     const canvas = fabricCanvasRef.current;
@@ -230,7 +247,7 @@ export function useFabric(options?: UseFabricOptions) {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
-    const textBox = new Textbox("New Text", {
+    const textBox = new Textbox("New Text".toUpperCase(), {
       left: 100,
       top: 100 + textElements.length * 50,
       width: 200,

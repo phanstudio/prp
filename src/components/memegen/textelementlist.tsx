@@ -1,5 +1,5 @@
 // TextElementList.tsx
-import React from "react";
+import React, {useState} from "react";
 import type { TextElement } from "../types";
 import TextEditor from "./texteditor";
 import { Bolt } from "lucide-react";
@@ -25,6 +25,7 @@ const TextElementList: React.FC<TextElementListProps> = ({
   currentTextProps,
   textManager,
 }) => {
+  const [textValues, setTextValues] = useState<{ [id: string]: string }>({});
   return (
     <div className="space-y-2 max-h-60 overflow-y-auto p-2">
       {textElements.map((element, index) => {
@@ -43,8 +44,9 @@ const TextElementList: React.FC<TextElementListProps> = ({
                 className="textarea textarea-sm textarea-bordered w-full mb-2 min-h-10"
                 value={isSelected ? currentTextProps?.text || "" : element.text || ""}
                 onChange={(e) => {
-                  setSelectedElement(element.id);
-                  updateProperty({ text: e.target.value });
+                    setSelectedElement(element.id);
+                    setTextValues(prev => ({ ...prev, [element.id]: e.target.value }));
+                    updateProperty({ text: e.target.value, allCaps: currentTextProps?.allCaps === true });
                 }}
                 onFocus={() => setSelectedElement(element.id)}
               />
@@ -89,6 +91,7 @@ const TextElementList: React.FC<TextElementListProps> = ({
                 updateProperty={updateProperty}
                 onDelete={deleteSelectedElement}
                 textManager={textManager}
+                textValue={textValues[element.id]}
               />
             </div>
             
