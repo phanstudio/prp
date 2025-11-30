@@ -1,5 +1,6 @@
 import { Canvas } from "fabric"
 import type { WatermarkManager } from "./use-watermark"
+import { SaveCanvas } from "./canvas-save-gen"
 
 export interface CanvasFileOptions {
   format?: "png" | "jpeg"
@@ -47,11 +48,12 @@ export class CanvasFileGenerator {
           }
 
           // Generate blob from canvas
-          const dataURL = this.canvas.toDataURL({
+          const dataURL = SaveCanvas(
+            this.canvas,
             format,
             quality,
             multiplier,
-          })
+          );
 
           // Convert dataURL to Blob
           const blob = await this.dataURLToBlob(dataURL)

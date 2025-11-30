@@ -124,36 +124,69 @@ export class TextManager {
   }
 
   duplicateSelectedText = async (): Promise<null> => {
-    if (!this.selectedText || !this.canvas) return null
-
-    // Clone the selected text with all its properties
-    const clone = await this.selectedText.clone() as Textbox
-    
-    // Offset the duplicate slightly
+    if (!this.selectedText || !this.canvas) return null;
+  
+    // Fabric v6: clone() returns a Promise
+    const clone = (await this.selectedText.clone()) as Textbox;
+  
+    // Offset clone
     clone.set({
       left: (this.selectedText.left || 0) + 20,
       top: (this.selectedText.top || 0) + 20,
-    })
+    });
+  
+    // New unique ID
+    (clone as any).id = Date.now().toString() + Math.random();
+  
+    // Copy maxFontSize
+    (clone as any)._maxFontSize = (this.selectedText as any)._maxFontSize;
+  
+    // ---------- EFFECT CLONING ----------
+  
+    const selected = this.selectedText as any;
+    const cloned = clone as any;
+  
+    // Outline / stroke
+    cloned.stroke = selected.stroke;
+    cloned.strokeWidth = selected.strokeWidth;
+    cloned.strokeLineJoin = selected.strokeLineJoin;
+    cloned.strokeLineCap = selected.strokeLineCap;
+    cloned.paintFirst = selected.paintFirst;
+  
+    // Normal shadow
+    // if (selected.shadow) {
+    //   cloned.shadow = new fabric.Shadow({
+    //     color: selected.shadow.color,
+    //     blur: selected.shadow.blur,
+    //     offsetX: selected.shadow.offsetX,
+    //     offsetY: selected.shadow.offsetY,
+    //   });
+    // }
+  
+    // NewShadow effect (blur stroke)
+    if (selected._newShadow === true) {
+      cloned._newShadow = true;
+      applyDefaultNewShad(cloned, cloned.stroke, cloned.strokeWidth || 2);
+    }
+  
+    // ---------- END EFFECT CLONING ----------
+  
+    // Re-enable resizing
+    makeTextboxResizable(clone, this.canvas);
 
-    // Generate new ID for the duplicate
-    ;(clone as any).id = Date.now().toString() + Math.random()
-    ;(clone as any)._maxFontSize = (this.selectedText as any)._maxFontSize
-
-    // Make the duplicate resizable
-    makeTextboxResizable(clone, this.canvas)
-
+    // Keep same exact dimensions
     clone.set({
       width: this.selectedText.width,
       height: this.selectedText.height,
     });
-
-    // Add to canvas
-    this.canvas.add(clone)
-    this.canvas.setActiveObject(clone)
-    this.canvas.requestRenderAll()
-
-    return null
-  }
+  
+    // Add clone to the canvas
+    this.canvas.add(clone);
+    this.canvas.setActiveObject(clone);
+    this.canvas.requestRenderAll();
+  
+    return null;
+  };
 
   /**
    * Parse opacity from rgba color string
@@ -287,7 +320,6 @@ export class TextManager {
    */
   updateSelectedText(properties: TextProperties): boolean {
     if (!this.selectedText || !this.canvas) return false
-
     // Handle effect type changes
     if (properties.effectType !== undefined) {
       switch (properties.effectType) {
@@ -359,6 +391,7 @@ export class TextManager {
     }
 
     this.canvas.requestRenderAll();
+    // throttleCanvasRender(this.canvas);
     return true
   }
 
@@ -429,7 +462,6 @@ export class TextManager {
       })
   }
 
-
   /**
    * Check if there's a selected text object
    */
@@ -464,42 +496,70 @@ function applyNewOutline(selectedText: Textbox, strokeColor:string , strokeWidth
   });
 }
 
-export function applyNewShad(selectedText: Textbox, strokeColor:string , strokeWidth: number){
-  applyNewOutline(selectedText, strokeColor, strokeWidth);
-  // Store original render if not already stored
-  if (!(selectedText as any)._originalRender) {
-    (selectedText as any)._originalRender = (selectedText as any)._render.bind(selectedText);
-  }
+let newShadowDebounce: any = null;
+
+export function applyNewShad(selectedText: Textbox, strokeColor: string, strokeWidth: number) {
+  // Always update stroke fast (smooth live preview)
+  selectedText.set({
+    stroke: strokeColor,
+    strokeWidth: strokeWidth,
+  });
+  selectedText.dirty = true;
   (selectedText as any)._newShadow = true
 
-  // Override render to apply blur filter to stroke
-  const originalRender = (selectedText as any)._render.bind(selectedText);
-  (selectedText as any)._render = function(ctx: CanvasRenderingContext2D) {
-    // Save the current state
+  // Debounce the expensive render override
+  clearTimeout(newShadowDebounce);
+  newShadowDebounce = setTimeout(() => {
+    applyNewShadFinal(selectedText, strokeWidth);
+    selectedText.canvas?.requestRenderAll();
+  }, 120);  
+}
+
+export function applyDefaultNewShad(selectedText: Textbox, strokeColor: string, strokeWidth: number) {
+  selectedText.set({
+    stroke: strokeColor,
+    strokeWidth: strokeWidth,
+  });
+  selectedText.dirty = true;
+  (selectedText as any)._newShadow = true
+  applyNewShadFinal(selectedText, strokeWidth);
+}
+
+export function applyNewShadFinal(selectedText: Textbox, strokeWidth: number, multiplier: number = 1) {
+  // Store original render once
+  if (!(selectedText as any)._originalRender) {
+    (selectedText as any)._originalRender = selectedText._render.bind(selectedText);
+  }
+
+  const originalRender = (selectedText as any)._originalRender;
+
+  selectedText._render = function(ctx: CanvasRenderingContext2D) {
     ctx.save();
-    
-    // Apply blur filter
-    ctx.filter = `blur(${(strokeWidth)/2}px)`;
-    
-    // Render only the stroke
+
+    // Blurred stroke
+    // ctx.filter = `blur(${strokeWidth / 2}px)`;
+    ctx.filter = `blur(${(strokeWidth / 2) * multiplier}px)`;
+
     const tempFill = this.fill;
-    this.fill = 'transparent';
+    this.fill = "transparent";
     originalRender(ctx);
     this.fill = tempFill;
-    
-    // Reset filter and render the fill
-    ctx.filter = 'none';
+
+    // Normal fill
+    ctx.filter = "none";
     const tempStroke = this.stroke;
-    this.stroke = 'transparent';
+    this.stroke = "transparent";
     originalRender(ctx);
     this.stroke = tempStroke;
-    
+
     ctx.restore();
   };
+
+  selectedText.dirty = true;
 }
 
 export function applydefualt(selectedText: Textbox) {
-  applyNewShad(
+  applyDefaultNewShad(
     selectedText, 
     DefualtTextSettings.outlineStrokeColor, 
     DefualtTextSettings.shadowStrokeWidth

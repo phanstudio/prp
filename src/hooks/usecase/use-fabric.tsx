@@ -8,7 +8,7 @@ import { makeTextboxResizable } from "./modules/fixed-size-textbox"
 import { deserializeTextElement } from "../../utilities/deserializeTextElements";
 import { useWindow } from "./use-window"
 import { DefualtTextSettings } from "../../components/types";
-// import { ensureFontLoaded } from "../../utilities/fontLoader";
+import { SaveCanvas } from "./modules/canvas-save-gen";
 
 const CANVAS_DIMENSIONS = {
   default: 600,//700,
@@ -102,7 +102,7 @@ export function useFabric(options?: UseFabricOptions) {
     if (!canvas) return;
 
     adjustCanvasSize(canvas, isMobile);
-    // refreshFontsAfterResize();
+    refreshFontsAfterResize();
     canvas.renderAll();
   }, [isMobile, windowSize.width, windowSize.height, baseCanvasSize]);
 
@@ -134,20 +134,59 @@ export function useFabric(options?: UseFabricOptions) {
     fabricCanvas.renderAll();
   }
   
-  // function refreshFontsAfterResize() {
-  //   const canvas = fabricCanvasRef.current;
-  //   if (!canvas) return;
+  async function refreshFontsAfterResize() {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
   
-  //   canvas.getObjects().forEach(obj => {
-  //     if (obj instanceof Textbox) {
-  //       ensureFontLoaded(obj.fontFamily);
-  //       console.log(obj);
-  //       obj.set("fontFamily", obj.fontFamily); // re-apply
-  //       // obj.initDimensions(); // recompute text metrics
-  //     }
-  //   });
-  //   canvas.requestRenderAll();
-  // }
+    const objects = canvas.getObjects();
+  
+    for (const obj of objects) {
+      if (!(obj instanceof Textbox)) continue;
+  
+      const font = obj.fontFamily;
+      if (!font) continue;
+  
+      // 1) Ask the browser to load the font *with a size* so it's actually usable for layout.
+      //    This tends to be more reliable than relying on a custom loader alone.
+      try {
+        // try to load a regular weight first, then wait for fonts.ready as a fallback
+        await Promise.all([
+          // request some nominal size so the face is available for metrics
+          (document as any).fonts?.load && (document as any).fonts.load(`16px "${font}"`),
+          (document as any).fonts?.ready
+        ]);
+      } catch (err) {
+        // ignore: font may still be available or document.fonts not supported
+        // but we still continue to apply and force re-render.
+      }
+  
+      // 2) Apply font to the object
+      obj.set("fontFamily", font);
+  
+      // 3) Recompute layout/metrics
+      // initDimensions computes width/height based on font metrics
+      if (typeof (obj as any).initDimensions === "function") {
+        try { obj.initDimensions(); } catch (e) { /* ignore */ }
+      }
+  
+      // 4) Clear Fabric caching that can preserve old drawing
+      // markDirty / set('dirty', true) depends on Fabric version; do both
+      try { (obj as any).dirty = true; } catch {}
+      try { obj.set("dirty", true); } catch {}
+      // If object caching is enabled, clear its cache
+      try { (obj as any).canvas && (obj as any)._clearCache && (obj as any)._clearCache(); } catch {}
+      try { (obj as any)._clearCache && (obj as any)._clearCache(); } catch {}
+  
+      // 5) update coordinates and request fresh draw
+      if (typeof (obj as any).setCoords === "function") obj.setCoords();
+  
+      // small micro-yield so the browser has time to paint between many fonts (prevents jank)
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  
+    // Final render
+    canvas.requestRenderAll();
+  }
 
   // Update text elements list from canvas
   const updateTextElementsList = () => {
@@ -302,37 +341,35 @@ export function useFabric(options?: UseFabricOptions) {
 
     canvas.renderAll();
     updateTextElementsList();
+    refreshFontsAfterResize();
   };
 
   async function downloadCanvas() {
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return
-    
+    if (!canvas) return;
+  
     if (outlineManagerRef.current){
       outlineManagerRef.current.removeOutlineAndHover();
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
+  
+    // Prepare watermark
+    await watermarkManagerRef.current?.prepareForDownload();
+  
+    // // Bake blur/outline for all text with _newShadow
+    const dataURL = SaveCanvas(canvas);
+  
+    const link = document.createElement('a');
+    link.href = dataURL;
+    link.download = 'meme.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-    // Prepare watermark for download
-    await watermarkManagerRef.current?.prepareForDownload()
-
-    const dataURL = canvas.toDataURL({
-      format: "png",
-      quality: 1,
-      multiplier: 3,
-    })
-
-    const link = document.createElement("a")
-    link.href = dataURL
-    link.download = "meme.png"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
-    // Clean up watermark after download
+    // Clean up watermark
     watermarkManagerRef.current?.cleanupAfterDownload();
-  }
-
+  }  
+  
   function updateWatermark(config: Partial<WatermarkConfig>) {
     watermarkManagerRef.current?.updateConfig(config)
   }

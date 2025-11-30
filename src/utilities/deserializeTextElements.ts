@@ -2,7 +2,7 @@ import { Textbox, Shadow, type Canvas } from "fabric";
 import { makeTextboxResizable } from "../hooks/usecase/modules/fixed-size-textbox";
 import { DefualtTextSettings } from "../components/types";
 import { ensureFontLoaded } from "../utilities/fontLoader";
-import { applyNewShad } from "../hooks/usecase/text-manager";
+import { applyDefaultNewShad } from "../hooks/usecase/text-manager";
 
 /**
  * Normalize rotation angle to within -180° → 180°
@@ -87,7 +87,7 @@ export function deserializeTextElement(el: any, canvas: Canvas): Textbox {
   });
 
   if (effectType === "newShadow"){
-    applyNewShad(textBox, shadStroke, shadWidth);
+    applyDefaultNewShad(textBox, shadStroke, shadWidth);
   }
 
   // Restore custom metadata for serialization or editing
