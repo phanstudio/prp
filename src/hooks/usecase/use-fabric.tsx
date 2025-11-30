@@ -116,10 +116,11 @@ export function useFabric(options?: UseFabricOptions) {
           CANVAS_DIMENSIONS.default
         )
       : CANVAS_DIMENSIONS.default;
-  
-    const bSize = Math.max(baseCanvasSize.width, baseCanvasSize.height);
-    const zoom = targetSize / (BASE_CANVAS_SIZE.width);
+    
+    let bSize = Math.max(baseCanvasSize.width, baseCanvasSize.height);
+    let zoom = targetSize / (BASE_CANVAS_SIZE.width);
     const scale = targetSize / bSize;
+
     currentZoomRef.current = zoom;
 
     // Resize the visible DOM element so it matches scaled view
@@ -133,6 +134,7 @@ export function useFabric(options?: UseFabricOptions) {
   
     fabricCanvas.renderAll();
   }
+  
   
   async function refreshFontsAfterResize() {
     const canvas = fabricCanvasRef.current;

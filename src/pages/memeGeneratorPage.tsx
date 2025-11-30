@@ -61,7 +61,7 @@ export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) =>
               </p>
             </div>
 
-            <div className="mb-4 flex justify-start">
+            <div className="mb-2 md:mb-4 flex justify-start" id="canvas-wrapper">
               <canvas ref={canvasRef} />
             </div>
           </div>
