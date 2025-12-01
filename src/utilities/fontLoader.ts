@@ -317,6 +317,29 @@ export const TOP_FONTS = [
   "Anton",
 ];
 
+
+// -------------------------------------------------------
+// 📱 Mobile detection
+// -------------------------------------------------------
+const IS_MOBILE =
+  typeof window !== "undefined" &&
+  /Android|iPhone|iPad|iPod|Mobile|SamsungBrowser/i.test(
+    navigator.userAgent
+  );
+
+// -------------------------------------------------------
+// 🎭 Mobile Replacement Map (NOT fallback)
+// -------------------------------------------------------
+const MOBILE_FONT_REPLACE_MAP: Record<string, string> = {
+  Impact: "Anton",
+  "Comic Sans MS": "Comic Neue",
+  "Times New Roman": "Noto Serif",
+  "Courier New": "Roboto Mono",
+  Garamond: "Cormorant Garamond",
+  "Palatino Linotype": "Cormorant",
+};
+
+
 // Internal state
 const loadedFonts = new Set<string>();
 const loadingFonts = new Map<string, Promise<void>>();
@@ -446,6 +469,13 @@ function batchLoadFonts(fonts: string[]): void {
 // ⭐ ENSURE FONT LOADED + MOBILE FAILSAFE
 // -------------------------------------------------------
 export async function ensureFontLoaded(fontFamily: string): Promise<void> {
+
+  // 📱 Mobile-only replacement (NOT fallback)
+  if (IS_MOBILE && MOBILE_FONT_REPLACE_MAP[fontFamily]) {
+    console.log(`📱 Mobile replacing '${fontFamily}' → '${MOBILE_FONT_REPLACE_MAP[fontFamily]}'`);
+    fontFamily = MOBILE_FONT_REPLACE_MAP[fontFamily];
+  }
+
   // Already loaded?
   if (loadedFonts.has(fontFamily)) return;
 
