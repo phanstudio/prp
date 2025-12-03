@@ -345,56 +345,96 @@ const loadingFonts = new Map<string, Promise<void>>();
 // -------------------------------------------------------
 // 🔍 Font detection (checks if font is really available)
 // -------------------------------------------------------
-function isFontAvailable(fontFamily: string): boolean {
-  // Prefer the modern API if available
-  if ("fonts" in document && typeof (document as any).fonts.check === "function") {
-    if ((document as any).fonts.check(`12px "${fontFamily}"`)) {
-      return true;
-    }
-  }
+// function isFontAvailable(fontFamily: string): boolean {
+//   // Prefer the modern API if available
+//   if ("fonts" in document && typeof (document as any).fonts.check === "function") {
+//     if ((document as any).fonts.check(`12px "${fontFamily}"`)) {
+//       return true;
+//     }
+//   }
 
-  // Fallback: canvas-based measurement check
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-  if (!context) return false;
+//   // Fallback: canvas-based measurement check
+//   const canvas = document.createElement("canvas");
+//   const context = canvas.getContext("2d");
+//   if (!context) return false;
 
-  const testText = "mmmmmmmmmwwwwwww";
-  const defaultFont = "monospace";
+//   const testText = "mmmmmmmmmwwwwwww";
+//   const defaultFont = "monospace";
 
-  context.font = `72px ${defaultFont}`;
-  const baselineWidth = context.measureText(testText).width;
+//   context.font = `72px ${defaultFont}`;
+//   const baselineWidth = context.measureText(testText).width;
 
-  context.font = `72px '${fontFamily}', ${defaultFont}`;
-  const newWidth = context.measureText(testText).width;
+//   context.font = `72px '${fontFamily}', ${defaultFont}`;
+//   const newWidth = context.measureText(testText).width;
 
-  return newWidth !== baselineWidth;
-}
+//   return newWidth !== baselineWidth;
+// }
 
 // -------------------------------------------------------
 // 🧠 Initialization
 // -------------------------------------------------------
 export function initFontLoader(): void {
-  // Mark critical fonts as immediately available
+  // Mark critical fonts as immediately available (loaded by unplugin-fonts)
   CRITICAL_FONTS.forEach(f => loadedFonts.add(f));
   
+  // Load popular fonts AFTER page is interactive (avoids preload warnings)
+  if (document.readyState === 'complete') {
+    loadPopularFonts();
+  } else {
+    window.addEventListener('load', loadPopularFonts);
+  }
+  
   console.log("🎨 Font loader initialized (using unplugin-fonts)");
-  console.log(`📦 ${CRITICAL_FONTS.length} critical fonts ready`);
-  console.log(`⏳ ${POPULAR_FONTS.length} popular fonts available on-demand`);
+  console.log(`✅ ${CRITICAL_FONTS.length} critical fonts ready`);
+  console.log(`⏳ ${POPULAR_FONTS.length} popular fonts will load after page interactive`);
+}
+
+// -------------------------------------------------------
+// 📦 Load popular fonts after page is ready
+// -------------------------------------------------------
+function loadPopularFonts(): void {
+  // Wait a tiny bit more to ensure page is fully interactive
+  setTimeout(() => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?${POPULAR_FONTS
+      .map(f => `family=${f.replace(/ /g, "+")}:wght@400;700`)
+      .join("&")}&display=swap`;
+
+    link.onload = () => {
+      POPULAR_FONTS.forEach(font => loadedFonts.add(font));
+      console.log(`📦 Loaded ${POPULAR_FONTS.length} popular fonts`);
+    };
+
+    link.onerror = () => {
+      console.warn("❌ Failed to load popular fonts");
+    };
+
+    document.head.appendChild(link);
+  }, 100); // Small delay after load event
 }
 
 // -------------------------------------------------------
 // 📦 Queue font loading (now just marks as ready for use)
 // -------------------------------------------------------
 export function queueFontLoad(fontFamily: string): void {
-  // With unplugin-fonts strategy:
-  // - CRITICAL fonts: Already loaded immediately
-  // - POPULAR fonts: Deferred (preloaded in background)
-  // - ALL OTHER fonts: Google Fonts API loads on-demand when CSS uses them
+  // Strategy:
+  // - CRITICAL fonts: Already loaded by unplugin-fonts
+  // - POPULAR fonts: Loaded after page load by initFontLoader()
+  // - ALL OTHER fonts: Will be loaded on-demand by ensureFontLoaded()
   
-  // Just mark as ready - actual loading handled by unplugin-fonts or Google Fonts API
-  if (!loadedFonts.has(fontFamily)) {
-    loadedFonts.add(fontFamily);
+  if (loadedFonts.has(fontFamily) || loadingFonts.has(fontFamily)) {
+    return;
   }
+
+  // If it's a popular font that hasn't loaded yet, just mark it
+  if (POPULAR_FONTS.includes(fontFamily)) {
+    loadedFonts.add(fontFamily);
+    return;
+  }
+
+  // For all other fonts, trigger on-demand loading
+  ensureFontLoaded(fontFamily);
 }
 
 // -------------------------------------------------------
@@ -411,37 +451,35 @@ export async function ensureFontLoaded(fontFamily: string): Promise<void> {
     return loadingFonts.get(fontFamily)!;
   }
 
-  // Create a promise that checks font availability
+  // If it's a critical or popular font, just mark as ready
+  if (CRITICAL_FONTS.includes(fontFamily) || POPULAR_FONTS.includes(fontFamily)) {
+    loadedFonts.add(fontFamily);
+    return;
+  }
+
+  // For all other fonts, load on-demand
   const loadPromise = new Promise<void>((resolve) => {
-    // Strategy based on font type:
-    // - CRITICAL: Already loaded by unplugin-fonts
-    // - POPULAR: Deferred preload by unplugin-fonts (should be ready quickly)
-    // - ALL OTHERS: Google Fonts API loads on-demand (may take 10-20ms first time)
-    
-    const checkFont = () => {
-      if (isFontAvailable(fontFamily)) {
-        loadedFonts.add(fontFamily);
-        loadingFonts.delete(fontFamily);
-        console.log(`✨ Font ready: ${fontFamily}`);
-        resolve();
-      } else {
-        // Font might still be loading (especially on-demand fonts)
-        // Wait briefly and mark as ready - Google Fonts API handles the rest
-        setTimeout(() => {
-          loadedFonts.add(fontFamily);
-          loadingFonts.delete(fontFamily);
-          console.log(`✨ Font marked ready: ${fontFamily} (loading in background)`);
-          resolve();
-        }, 100);
-      }
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(
+      / /g,
+      "+"
+    )}:wght@400;700&display=swap`;
+
+    link.onload = () => {
+      loadedFonts.add(fontFamily);
+      loadingFonts.delete(fontFamily);
+      console.log(`✨ Loaded on-demand font: ${fontFamily}`);
+      resolve();
     };
 
-    // Use document.fonts.ready if available for better detection
-    if ("fonts" in document && (document as any).fonts.ready) {
-      (document as any).fonts.ready.then(checkFont);
-    } else {
-      checkFont();
-    }
+    link.onerror = () => {
+      console.warn(`❌ Failed to load font: ${fontFamily}`);
+      loadingFonts.delete(fontFamily);
+      resolve();
+    };
+
+    document.head.appendChild(link);
   });
 
   loadingFonts.set(fontFamily, loadPromise);
