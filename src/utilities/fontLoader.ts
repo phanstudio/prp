@@ -1,9 +1,3 @@
-
-
-// initfontloader, queueFontLoad, ensureFontLoaded, isFontLoaded, isFontLoading these are beign used by other programs don't change thaer name, and overall logic
-// system fonts are important, code to detect and add to the list
-// preload top fonts
-
 import { SYSTEM_FONTS } from "./fontList";
 
 // src/utilities/fontLoader.ts
@@ -81,7 +75,6 @@ function isFontAvailable(fontFamily: string): boolean {
 // -------------------------------------------------------
 export function initFontLoader(): void {
   CRITICAL_FONTS.forEach((f) => loadedFonts.add(f));
-  POPULAR_FONTS.forEach((f) => loadedFonts.add(f));
   console.log("🎨 Font loader initialized");
   console.log(`📦 Critical fonts ready: ${CRITICAL_FONTS.join(", ")}`);
   console.log(`⏳ Popular fonts available on-demand: ${POPULAR_FONTS.length}`);
