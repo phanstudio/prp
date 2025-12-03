@@ -8,12 +8,16 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        // Local Impact font
         impact: ["Impact", "sans-serif"],
-        // Google fonts via unplugin-fonts
+        arial: ["Arial", "sans-serif"],
+        comic: ["Comic Sans MS", "cursive"],
+        times: ["Times New Roman", "serif"],
+        courier: ["Courier New", "monospace"],
+        verdana: ["Verdana", "sans-serif"],
+
         roboto: ["Roboto", "sans-serif"],
         poppins: ["Poppins", "sans-serif"],
-        // Add other custom fonts here
+        montserrat: ["Montserrat", "sans-serif"],
       },
     },
   },

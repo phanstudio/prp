@@ -224,6 +224,7 @@ let batchLoadTimer: ReturnType<typeof setTimeout> | null = null;
 // -------------------------------------------------------
 export function initFontLoader(): void {
   CRITICAL_FONTS.forEach((f) => loadedFonts.add(f));
+  SYSTEM_FONTS.forEach((f) => loadedFonts.add(f));
 
   console.log("🎨 Font loader initialized");
   console.log(`📦 Critical fonts: ${CRITICAL_FONTS.join(", ")}`);

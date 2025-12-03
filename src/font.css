@@ -8,3 +8,48 @@
     font-display: swap;
     /* avoids FOIT (Flash of Invisible Text) */
 }
+
+@font-face {
+    font-family: "Arial";
+    src: url("/fonts/ARIAL.TTF") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+    /* avoids FOIT (Flash of Invisible Text) */
+}
+
+@font-face {
+    font-family: "Comic Sans MS";
+    src: url("/fonts/Comic Sans MS.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+    /* avoids FOIT (Flash of Invisible Text) */
+}
+
+@font-face {
+    font-family: "Times New Roman";
+    src: url("/fonts/times.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+    /* avoids FOIT (Flash of Invisible Text) */
+}
+
+@font-face {
+    font-family: "Courier New";
+    src: url("/fonts/cour.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+    /* avoids FOIT (Flash of Invisible Text) */
+}
+
+@font-face {
+    font-family: "Verdana";
+    src: url("/fonts/Verdana.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+    /* avoids FOIT (Flash of Invisible Text) */
+}
