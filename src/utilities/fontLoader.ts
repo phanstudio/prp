@@ -40,14 +40,6 @@ const POPULAR_FONTS = [
   "Anton",
 ];
 
-// Map font names to @fontsource package names
-// Most @fontsource packages are lowercase with dashes
-// const fontPackageMap: Record<string, string> = {};
-// allFonts.forEach((font) => {
-//   const pkgName = font.toLowerCase().replace(/\s+/g, "-");
-//   fontPackageMap[font] = `@fontsource/${pkgName}`;
-// });
-
 // -----------------------------------------
 // Internal state
 // -----------------------------------------
@@ -55,95 +47,6 @@ const loadedFonts = new Set<string>();
 const loadingFonts = new Map<string, Promise<void>>();
 const fontLoadQueue = new Set<string>();
 let batchLoadTimer: ReturnType<typeof setTimeout> | null = null;
-
-// -----------------------------------------
-// Font detection (checks if font is available in the browser)
-// -----------------------------------------
-// function isFontAvailable(fontFamily: string): boolean {
-//   if ("fonts" in document && typeof (document as any).fonts.check === "function") {
-//     if ((document as any).fonts.check(`12px "${fontFamily}"`)) return true;
-//   }
-
-//   const canvas = document.createElement("canvas");
-//   const context = canvas.getContext("2d");
-//   if (!context) return false;
-
-//   const testText = "mmmmmmmmmwwwwwww";
-//   const defaultFont = "monospace";
-
-//   context.font = `72px ${defaultFont}`;
-//   const baselineWidth = context.measureText(testText).width;
-
-//   context.font = `72px '${fontFamily}', ${defaultFont}`;
-//   const newWidth = context.measureText(testText).width;
-
-//   return newWidth !== baselineWidth;
-// }
-
-// -----------------------------------------
-// Queue font to load (called by FontSelector)
-// -----------------------------------------
-// export function queueFontLoad(fontFamily: string): void {
-//   if (loadedFonts.has(fontFamily) || loadingFonts.has(fontFamily)) return;
-
-//   const pkg = fontPackageMap[fontFamily];
-//   if (pkg) {
-//     const promise = import(`${pkg}/index.css`)
-//       .then(() => {
-//         loadedFonts.add(fontFamily);
-//         loadingFonts.delete(fontFamily);
-//         console.log(`✨ Font loaded dynamically: ${fontFamily}`);
-//       })
-//       .catch((e) => {
-//         console.warn(`[FontLoader] Failed to load "${fontFamily}"`, e);
-//         loadedFonts.add(fontFamily); // fallback
-//         loadingFonts.delete(fontFamily);
-//       });
-//     loadingFonts.set(fontFamily, promise);
-//   } else {
-//     // fallback: system font
-//     loadedFonts.add(fontFamily);
-//   }
-// }
-
-// -----------------------------------------
-// Ensure font is loaded immediately
-// -----------------------------------------
-// export async function ensureFontLoaded(fontFamily: string): Promise<void> {
-//   if (loadedFonts.has(fontFamily)) return;
-//   if (loadingFonts.has(fontFamily)) return loadingFonts.get(fontFamily)!;
-
-//   const pkg = fontPackageMap[fontFamily];
-//   if (pkg) {
-//     const promise = import(`${pkg}/index.css`)
-//       .then(() => {
-//         loadedFonts.add(fontFamily);
-//         loadingFonts.delete(fontFamily);
-//         console.log(`✨ Font ensured dynamically: ${fontFamily}`);
-//       })
-//       .catch((e) => {
-//         console.warn(`[FontLoader] Failed to load "${fontFamily}"`, e);
-//         loadedFonts.add(fontFamily);
-//         loadingFonts.delete(fontFamily);
-//       });
-//     loadingFonts.set(fontFamily, promise);
-//     return promise;
-//   } else {
-//     loadedFonts.add(fontFamily);
-//   }
-// }
-
-// export function getFontStats() {
-//   return {
-//     loaded: loadedFonts.size,
-//     loading: loadingFonts.size,
-//     queued: 0, // queue is implicit with dynamic loading
-//     loadedList: Array.from(loadedFonts),
-//   };
-// }
-
-
-// Internal state
 
 
 // -------------------------------------------------------
@@ -175,6 +78,7 @@ function isFontAvailable(fontFamily: string): boolean {
 // -------------------------------------------------------
 export function initFontLoader(): void {
   CRITICAL_FONTS.forEach((f) => loadedFonts.add(f));
+  POPULAR_FONTS.forEach((f) => loadedFonts.add(f));
   console.log("🎨 Font loader initialized");
   console.log(`📦 Critical fonts ready: ${CRITICAL_FONTS.join(", ")}`);
   console.log(`⏳ Popular fonts available on-demand: ${POPULAR_FONTS.length}`);
@@ -227,39 +131,37 @@ function batchLoadFonts(fonts: string[]): void {
   fonts.forEach(font => loadingFonts.set(font, loadPromise));
 }
 
-// -------------------------------------------------------
-// ⭐ ENSURE FONT LOADED + MOBILE FAILSAFE
-// -------------------------------------------------------
 export async function ensureFontLoaded(fontFamily: string): Promise<void> {
-
-  // Already loaded?
   if (loadedFonts.has(fontFamily)) return;
 
-  // If available locally, done
   if (isFontAvailable(fontFamily)) {
     loadedFonts.add(fontFamily);
     return;
   }
 
-  // If loading already
-  if (loadingFonts.has(fontFamily)) {
-    return loadingFonts.get(fontFamily)!;
-  }
+  if (loadingFonts.has(fontFamily)) return loadingFonts.get(fontFamily)!;
 
-  // Try loading primary font
-  const loadPromise = new Promise<void>(resolve => {
+  const url = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(
+    / /g,
+    "+"
+  )}&display=swap`;
+
+  const loadPromise = new Promise<void>((resolve, _) => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(
-      / /g,
-      "+"
-    )}:wght@400;700&display=swap`;
+    link.href = url;
 
     link.onload = () => {
       loadedFonts.add(fontFamily);
       loadingFonts.delete(fontFamily);
       console.log(`✨ Loaded font: ${fontFamily}`);
       resolve();
+    };
+
+    link.onerror = (e) => {
+      console.warn(`❌ Failed to load font: ${fontFamily}`, e);
+      loadingFonts.delete(fontFamily);
+      resolve(); // resolve anyway to prevent blocking
     };
 
     document.head.appendChild(link);
