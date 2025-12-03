@@ -90,6 +90,8 @@ export function initFontLoader(): void {
 // -------------------------------------------------------
 export function queueFontLoad(fontFamily: string): void {
   if (loadedFonts.has(fontFamily) || loadingFonts.has(fontFamily)) return;
+  
+  if (SYSTEM_FONTS.includes(fontFamily)) return; // skip
 
   fontLoadQueue.add(fontFamily);
 
