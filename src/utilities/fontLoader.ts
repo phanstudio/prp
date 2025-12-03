@@ -3,6 +3,9 @@
 // initfontloader, queueFontLoad, ensureFontLoaded, isFontLoaded, isFontLoading these are beign used by other programs don't change thaer name, and overall logic
 // system fonts are important, code to detect and add to the list
 // preload top fonts
+
+import { SYSTEM_FONTS } from "./fontList";
+
 // src/utilities/fontLoader.ts
 
 // Critical fonts: load immediately
@@ -138,6 +141,8 @@ export async function ensureFontLoaded(fontFamily: string): Promise<void> {
     loadedFonts.add(fontFamily);
     return;
   }
+
+  if (SYSTEM_FONTS.includes(fontFamily)) return; // skip
 
   if (loadingFonts.has(fontFamily)) return loadingFonts.get(fontFamily)!;
 

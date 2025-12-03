@@ -10,10 +10,27 @@ export const recommendedFonts = [
   "Verdana",
 ];
 
-// All available fonts
-export const allFonts = [
+// Fonts that exist on the user’s system (no Google fetch needed)
+export const SYSTEM_FONTS = [
   "Impact",
+  "Arial",
   "Comic Sans MS",
+  "Times New Roman",
+  "Courier New",
+  "Verdana",
+  "Helvetica",
+  "Georgia",
+  "Tahoma",
+  "Trebuchet MS",
+  "Palatino Linotype",
+  "Garamond",
+  "Lucida Sans",
+  "Bookman",
+  "Candara",
+];
+
+// Fonts that need Google Fonts (or self-hosting)
+export const GOOGLE_FONTS = [
   "Alfa Slab One",
   "Anton",
   "Bangers",
@@ -30,20 +47,6 @@ export const allFonts = [
   "Rubik",
   "Shrikhand",
   "Staatliches",
-  "Arial",
-  "Helvetica",
-  "Times New Roman",
-  "Verdana",
-  "Tahoma",
-  "Trebuchet MS",
-  "Georgia",
-  "Courier New",
-  "Lucida Sans",
-  "Palatino Linotype",
-  "Garamond",
-  "Bookman",
-  "Candara",
-  "Comic Neue",
   "Montserrat",
   "ABeeZee",
   "Abel",
@@ -223,4 +226,10 @@ export const allFonts = [
   "Zen Kaku Gothic New",
   "Zeyada",
   "Zilla Slab",
+];
+
+// All available fonts
+export const allFonts = [
+  ...SYSTEM_FONTS,
+  ...GOOGLE_FONTS,
 ];
