@@ -13,6 +13,7 @@ import './App.css';
 import { ToastProvider } from './services/ToastProvider';
 import { TemplateProvider } from "./contexts/TemplateContext";
 import { initFontLoader } from './utilities/fontLoader';
+import 'unfonts.css'  // Required for unplugin-fonts
 
 const AppRoutes: React.FC = () => {
   // Initialize font loader on app start
