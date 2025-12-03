@@ -48,68 +48,69 @@ const FontSelector: React.FC<FontSelectorProps> = ({ value, onChange }) => {
     .sort((a, b) => Number(b.recommended) - Number(a.recommended));
 
   // Setup Intersection Observer for progressive loading
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const fontName = entry.target.getAttribute('data-font');
+            if (fontName) {
+              queueFontLoad(fontName);
+              // Force re-render to show loaded state
+              setTimeout(() => forceUpdate(prev => prev + 1), 200);
+            }
+          }
+          console.log("observed:", entry.target, "intersecting?", entry.isIntersecting);
+        });
+      },
+      {
+        root: scrollContainerRef.current,
+        rootMargin: '100px', // Load 100px before visible
+        threshold: 0.01,
+      }
+    );
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, []);
   // useEffect(() => {
-  //   observerRef.current = new IntersectionObserver(
+  //   if (!scrollContainerRef.current) return;
+  
+  //   const observer = new IntersectionObserver(
   //     (entries) => {
   //       entries.forEach((entry) => {
   //         if (entry.isIntersecting) {
-  //           const fontName = entry.target.getAttribute('data-font');
+  //           const fontName = entry.target.getAttribute("data-font");
   //           if (fontName) {
   //             queueFontLoad(fontName);
-  //             // Force re-render to show loaded state
-  //             setTimeout(() => forceUpdate(prev => prev + 1), 200);
+  //             forceUpdate((x) => x + 1);
   //           }
   //         }
   //       });
   //     },
   //     {
   //       root: scrollContainerRef.current,
-  //       rootMargin: '100px', // Load 100px before visible
-  //       threshold: 0.01,
+  //       rootMargin: "150px",
+  //       threshold: 0,
   //     }
   //   );
-
+  
+  //   observerRef.current = observer;
+  
+  //   // Observe existing already-mounted font items
+  //   fontRefs.current.forEach((el) => observer.observe(el));
+  
+  //   // Re-observe when scroll container changes (after hydration)
+  //   const id = setTimeout(() => {
+  //     fontRefs.current.forEach((el) => observer.observe(el));
+  //   }, 50);
+  
   //   return () => {
-  //     observerRef.current?.disconnect();
+  //     clearTimeout(id);
+  //     observer.disconnect();
   //   };
-  // }, []);
-  useEffect(() => {
-    if (!scrollContainerRef.current) return;
-  
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const fontName = entry.target.getAttribute("data-font");
-            if (fontName) {
-              queueFontLoad(fontName);
-              forceUpdate((x) => x + 1);
-            }
-          }
-        });
-      },
-      {
-        root: scrollContainerRef.current,
-        rootMargin: "150px",
-        threshold: 0,
-      }
-    );
-  
-    observerRef.current = observer;
-  
-    // Observe existing already-mounted font items
-    fontRefs.current.forEach((el) => observer.observe(el));
-  
-    // Re-observe when scroll container changes (after hydration)
-    const id = setTimeout(() => {
-      fontRefs.current.forEach((el) => observer.observe(el));
-    }, 50);
-  
-    return () => {
-      clearTimeout(id);
-      observer.disconnect();
-    };
-  }, [filteredFonts.length]);
+  // }, [filteredFonts.length]);
   
 
   // Observe font elements
