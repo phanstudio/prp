@@ -7,13 +7,13 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { TemplateCreatorRoute, GalleryRoute, MemeGeneratorRoute, MemeEditorRoute } from './utilities/router';
 import { RegularLayout, AdminLayout } from "./utilities/layouts";
+import 'unfonts.css'  // Required for unplugin-fonts
+import './font.css';
 import './App.css';
-// Remove the old font.css import - we're using progressive loading now
-// import './font.css';
+
 import { ToastProvider } from './services/ToastProvider';
 import { TemplateProvider } from "./contexts/TemplateContext";
 import { initFontLoader } from './utilities/fontLoader';
-import 'unfonts.css'  // Required for unplugin-fonts
 
 const AppRoutes: React.FC = () => {
   // Initialize font loader on app start
