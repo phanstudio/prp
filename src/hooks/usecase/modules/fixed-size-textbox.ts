@@ -1,3 +1,4 @@
+//fixed-size-textbox.ts
 import * as fabric from "fabric"
 
 /**
@@ -46,48 +47,84 @@ export function makeTextboxResizable(
     return realOriginalCalcTextHeight.call(textbox)
   }
 
-  // // Function to check if text fits with a given font size
-  function checkFitsAtFontSize(fontSize: number): { fitsWidth: boolean; fitsHeight: boolean } {
-    // Set font size for measurement
-    textbox.set({ fontSize })
-    textbox._clearCache()
+  // Function to check if text fits with a given font size
+  // function checkFitsAtFontSize(fontSize: number): { fitsWidth: boolean; fitsHeight: boolean } {
+  //   // Set font size for measurement
+  //   textbox.set({ fontSize })
+  //   textbox._clearCache()
     
-    const containerWidth = textbox.width || 200
-    const containerHeight = textbox.height || 100
+  //   const containerWidth = textbox.width || 200
+  //   const containerHeight = textbox.height || 100
+  //   console.log(containerWidth)
     
-    // Get stroke width to account for outline
-    // const strokeWidth = textbox.strokeWidth || 0
-    // const strokePadding = strokeWidth //* 2 // Account for both sides
+  //   // Get stroke width to account for outline
+  //   // const strokeWidth = textbox.strokeWidth || 0
+  //   // const strokePadding = strokeWidth //* 2 // Account for both sides
     
-    // Check width constraint (unwrapped lines)
-    const text = textbox.text || ""
-    const lines = text.split('\n')
-    let maxLineWidth = 0
+  //   // Check width constraint (unwrapped lines)
+  //   const text = textbox.text || ""
+  //   const lines = text.split('\n')
+  //   let maxLineWidth = 0
     
-    const ctx = canvas.getContext()
-    const fontString = textbox._getFontDeclaration()
-    
-    for (const line of lines) {
-      if (!line) continue
-      ctx.save()
-      ctx.font = fontString
-      const metrics = ctx.measureText(line)
-      maxLineWidth = Math.max(maxLineWidth, metrics.width)
-      ctx.restore()
-    }
+  //   const ctx = canvas.getContext()
+  //   const fontString = textbox._getFontDeclaration()
+  //   for (const line of lines) {
+  //     if (!line) continue
+  //     ctx.save()
+  //     ctx.font = fontString
+      
+  //     const metrics = ctx.measureText(line)
+  //     maxLineWidth = Math.max(maxLineWidth, metrics.width)
+  //     ctx.restore()
+  //   }
 
-    // Add padding for outline and general spacing
-    maxLineWidth += 3 //+ strokePadding
+  //   // Add padding for outline and general spacing
+  //   maxLineWidth += 3 //+ strokePadding
     
-    // Check height constraint (with wrapping applied) - use REAL calculation
-    const textHeight = getActualTextHeight() //+ strokePadding
+  //   // Check height constraint (with wrapping applied) - use REAL calculation
+  //   const textHeight = getActualTextHeight() //+ strokePadding
     
+  //   return {
+  //     fitsWidth: maxLineWidth <= containerWidth,
+  //     fitsHeight: textHeight <= containerHeight
+  //   }
+  // }
+
+  function checkFitsAtFontSize(fontSize: number) {
+    const zoom = canvas.getZoom();
+  
+    // Font size must ignore zoom
+    textbox.set({ fontSize: fontSize / zoom });
+    textbox._clearCache();
+  
+    const containerWidth = textbox.width || 200;
+    const containerHeight = textbox.height || 100;
+  
+    const ctx = canvas.getContext();
+    const fontString = textbox._getFontDeclaration();
+  
+    let maxLineWidth = 0;
+  
+    for (const line of (textbox.text || "").split("\n")) {
+      if (!line) continue;
+  
+      ctx.save();
+      ctx.font = fontString;
+      const measured = ctx.measureText(line).width;
+      ctx.restore();
+  
+      // Correct zoom distortion
+      maxLineWidth = Math.max(maxLineWidth, measured / zoom);
+    }
+  
+    // Correct REAL text height
+    const textHeight = getActualTextHeight() / zoom;
+  
     return {
       fitsWidth: maxLineWidth <= containerWidth,
-      fitsHeight: textHeight <= containerHeight
-    }
+      fitsHeight: textHeight <= containerHeight,
+    };
   }
-
   
   // Function to check if text fits and auto-adjust font size
   function autoShrinkIfNeeded() {
@@ -116,7 +153,8 @@ export function makeTextboxResizable(
     // console.log('Best fit fontSize:', bestFit)
     
     // Set the best fitting font size
-    textbox.set({ fontSize: bestFit })
+    // textbox.set({ fontSize: bestFit })
+    textbox.set({ fontSize: bestFit / canvas.getZoom() });
     textbox._clearCache()
   }
   
