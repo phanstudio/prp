@@ -221,6 +221,9 @@ export function useFabric(options?: UseFabricOptions) {
     // First, ensure the font is fully loaded
     await ensureFontLoaded(font);
     
+    // Check if this is a fixed/resizable textbox
+    const isResizableTextbox = !!(textbox as any)._autoShrinkIfNeeded;
+    
     // Store all current properties
     const currentText = textbox.text;
     const currentWidth = textbox.width;
@@ -236,49 +239,58 @@ export function useFabric(options?: UseFabricOptions) {
     const currentCharSpacing = textbox.charSpacing;
     const currentStyles = textbox.styles;
     
-    // Create a temporary textbox to force proper font measurement
-    const tempTextbox = new Textbox(currentText, {
-      fontFamily: font,
-      fontSize: currentFontSize,
-      width: currentWidth,
-      left: 0,
-      top: 0,
-      fill: currentFill,
-      textAlign: currentTextAlign,
-      lineHeight: currentLineHeight,
-      charSpacing: currentCharSpacing,
-      styles: currentStyles,
-    });
+    // For fixed textboxes, just update the font and re-run autoShrink
+    if (isResizableTextbox) {
+      // Simply update the font and let the autoShrink handle the rest
+      textbox.set({ fontFamily: font });
+      
+      // Run the auto-shrink function if it exists
+      if ((textbox as any)._autoShrinkIfNeeded) {
+        (textbox as any)._autoShrinkIfNeeded();
+      }
+      
+      // Only clear minimal caches
+      textbox._clearCache?.();
+      textbox.set('dirty', true);
+    } else {
+      // For regular textboxes, use the full cache clearing
+      const tempTextbox = new Textbox(currentText, {
+        fontFamily: font,
+        fontSize: currentFontSize,
+        width: currentWidth,
+        left: 0,
+        top: 0,
+        fill: currentFill,
+        textAlign: currentTextAlign,
+        lineHeight: currentLineHeight,
+        charSpacing: currentCharSpacing,
+        styles: currentStyles,
+      });
+      
+      tempTextbox.initDimensions();
+      
+      textbox.set({
+        fontFamily: font,
+        fontSize: currentFontSize,
+        width: currentWidth,
+        height: tempTextbox.height,
+        scaleX: currentScaleX,
+        scaleY: currentScaleY,
+        left: currentLeft,
+        top: currentTop,
+        angle: currentAngle,
+        fill: currentFill,
+        textAlign: currentTextAlign,
+        lineHeight: currentLineHeight,
+        charSpacing: currentCharSpacing,
+        styles: currentStyles,
+      });
+      
+      clearFabricTextCaches(textbox);
+      textbox.initDimensions();
+    }
     
-    // Force Fabric to measure with the new font
-    tempTextbox.initDimensions();
-    
-    // Now update the original textbox with proper metrics
-    textbox.set({
-      fontFamily: font,
-      fontSize: currentFontSize,
-      width: currentWidth,
-      height: tempTextbox.height,
-      scaleX: currentScaleX,
-      scaleY: currentScaleY,
-      left: currentLeft,
-      top: currentTop,
-      angle: currentAngle,
-      fill: currentFill,
-      textAlign: currentTextAlign,
-      lineHeight: currentLineHeight,
-      charSpacing: currentCharSpacing,
-      styles: currentStyles,
-    });
-    
-    // Clear all caches in Fabric 6.0+
-    clearFabricTextCaches(textbox);
-    
-    // Reinitialize dimensions
-    textbox.initDimensions();
     textbox.setCoords();
-    
-    // Mark as dirty
     textbox.set('dirty', true);
     textbox.canvas?.requestRenderAll();
   }
@@ -444,7 +456,7 @@ export function useFabric(options?: UseFabricOptions) {
     if (!canvas) return;
 
     // Ensure font is loaded before creating textbox
-    await ensureFontLoaded(DefualtTextSettings.fontFamily);
+    // await ensureFontLoaded(DefualtTextSettings.fontFamily);
 
     const textBox = new Textbox("New Text".toUpperCase(), {
       left: 100,
@@ -500,6 +512,7 @@ export function useFabric(options?: UseFabricOptions) {
       const textBox = await deserializeTextElement(element);
       canvas.add(textBox);
 
+      console.log(canvas.getContext());
       await new Promise(resolve => setTimeout(resolve, 0));
       makeTextboxResizable(textBox, canvas)
 

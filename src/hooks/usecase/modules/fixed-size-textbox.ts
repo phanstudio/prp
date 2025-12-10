@@ -47,53 +47,6 @@ export function makeTextboxResizable(
     return realOriginalCalcTextHeight.call(textbox)
   }
 
-  // // Function to check if text fits with a given font size
-  // function checkFitsAtFontSize(fontSize: number): { fitsWidth: boolean; fitsHeight: boolean } {
-  //   // Set font size for measurement
-  //   textbox.set({ fontSize })
-  //   textbox._clearCache()
-    
-  //   const containerWidth = textbox.width || 200
-  //   const containerHeight = textbox.height || 100
-  //   console.log(containerWidth)
-    
-  //   // Get stroke width to account for outline
-  //   // const strokeWidth = textbox.strokeWidth || 0
-  //   // const strokePadding = strokeWidth //* 2 // Account for both sides
-    
-  //   // Check width constraint (unwrapped lines)
-  //   const text = textbox.text || ""
-  //   const lines = text.split('\n')
-  //   let maxLineWidth = 0
-  //   const zoom = canvas.getZoom();
-    
-  //   const ctx = canvas.getContext()
-  //   const fontString = textbox._getFontDeclaration()
-  //   for (const line of lines) {
-  //     if (!line) continue
-  //     ctx.save()
-  //     ctx.font = fontString
-      
-  //     // const metrics = ctx.measureText(line);
-  //     const metrics = ctx.measureText(line).width / zoom;
-  //     maxLineWidth = Math.max(maxLineWidth, metrics)//.width)
-  //     ctx.restore()
-  //   }
-
-  //   console.log(maxLineWidth, zoom, "news")
-
-  //   // Add padding for outline and general spacing
-  //   maxLineWidth += 3 //+ strokePadding
-    
-  //   // Check height constraint (with wrapping applied) - use REAL calculation
-  //   const textHeight = getActualTextHeight()/zoom //+ strokePadding
-    
-  //   return {
-  //     fitsWidth: maxLineWidth <= containerWidth,
-  //     fitsHeight: textHeight <= containerHeight
-  //   }
-  // }
-
   function checkFitsAtFontSize(realFontSize: number): { fitsWidth: boolean; fitsHeight: boolean } {
     const zoom = canvas.getZoom()
 
@@ -111,7 +64,6 @@ export function makeTextboxResizable(
     const lines = text.split("\n")
     let maxLineWidth = 0
     
-    console.log(canvas)
     const ctx = canvas.getContext()
     const fontString = textbox._getFontDeclaration()
     
