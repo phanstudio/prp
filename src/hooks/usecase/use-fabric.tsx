@@ -9,6 +9,7 @@ import { deserializeTextElement } from "../../utilities/deserializeTextElements"
 import { useWindow } from "./use-window"
 import { DefualtTextSettings } from "../../components/types";
 import { SaveCanvas } from "./modules/canvas-save-gen";
+import { ensureFontLoaded } from "../../utilities/fontLoader";
 
 const CANVAS_DIMENSIONS = {
   default: 600,//700,
@@ -98,12 +99,15 @@ export function useFabric(options?: UseFabricOptions) {
   }, []);
 
   useEffect(() => {
-    const canvas = fabricCanvasRef.current;
+    const resize = async() => {
+      const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
     adjustCanvasSize(canvas, isMobile);
-    refreshFontsAfterResize();
+    await refreshFontsAfterResize();
     canvas.renderAll();
+    }
+    resize();
   }, [isMobile, windowSize.width, windowSize.height, baseCanvasSize]);
 
   function adjustCanvasSize(fabricCanvas: Canvas, isMobile: boolean) {
@@ -134,62 +138,186 @@ export function useFabric(options?: UseFabricOptions) {
   
     fabricCanvas.renderAll();
   }
-  
-  
+
+  // async function refreshFontsAfterResize() {
+    //   const canvas = fabricCanvasRef.current;
+    //   if (!canvas) return;
+    
+    //   const objects = canvas.getObjects();
+    
+    //   for (const obj of objects) {
+    //     if (!(obj instanceof Textbox)) continue;
+    
+    //     const font = obj.fontFamily;
+    //     if (!font) continue;
+    
+    //     // // 1) Ask the browser to load the font *with a size* so it's actually usable for layout.
+    //     // //    This tends to be more reliable than relying on a custom loader alone.
+    //     // try {
+    //     //   // try to load a regular weight first, then wait for fonts.ready as a fallback
+    //     //   await Promise.all([
+    //     //     // request some nominal size so the face is available for metrics
+    //     //     (document as any).fonts?.load && (document as any).fonts.load(`16px "${font}"`),
+    //     //     // ensureFontLoaded(font),
+    //     //     (document as any).fonts?.ready
+    //     //   ]);
+    //     // } catch (err) {
+    //     //   // ignore: font may still be available or document.fonts not supported
+    //     //   // but we still continue to apply and force re-render.
+    //     // }
+
+    //     // console.log(obj.get("fontFamily"))
+    
+    //     // // 2) Apply font to the object
+    //     // obj.set("fontFamily", font);  
+    //     // 3) Recompute layout/metrics
+    //     // initDimensions computes width/height based on font metrics
+    //     // if (typeof (obj as any).initDimensions === "function") {
+    //     //   try { obj.initDimensions(); } catch (e) { /* ignore */ }
+    //     // }
+    
+    //     // // 4) Clear Fabric caching that can preserve old drawing
+    //     // // markDirty / set('dirty', true) depends on Fabric version; do both
+    //     // try { (obj as any).dirty = true; } catch {}
+    //     // try { obj.set("dirty", true); } catch {}
+    //     // // If object caching is enabled, clear its cache
+    //     // try { (obj as any).canvas && (obj as any)._clearCache && (obj as any)._clearCache(); } catch {}
+    //     // try { (obj as any)._clearCache && (obj as any)._clearCache(); } catch {}
+    
+    //     // // 5) update coordinates and request fresh draw
+    //     // if (typeof (obj as any).setCoords === "function") obj.setCoords();
+
+    //     await applyRealFont(obj, font)
+    
+    //     // small micro-yield so the browser has time to paint between many fonts (prevents jank)
+    //     await new Promise((r) => setTimeout(r, 0));
+    //   }
+    
+    //   // Final render
+    //   canvas.requestRenderAll();
+    // }
+
+    // Update the refreshFontsAfterResize function to properly handle font reloading
   async function refreshFontsAfterResize() {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-  
+
     const objects = canvas.getObjects();
-  
+    
     for (const obj of objects) {
       if (!(obj instanceof Textbox)) continue;
-  
+
       const font = obj.fontFamily;
       if (!font) continue;
-  
-      // 1) Ask the browser to load the font *with a size* so it's actually usable for layout.
-      //    This tends to be more reliable than relying on a custom loader alone.
-      try {
-        // try to load a regular weight first, then wait for fonts.ready as a fallback
-        await Promise.all([
-          // request some nominal size so the face is available for metrics
-          (document as any).fonts?.load && (document as any).fonts.load(`16px "${font}"`),
-          (document as any).fonts?.ready
-        ]);
-      } catch (err) {
-        // ignore: font may still be available or document.fonts not supported
-        // but we still continue to apply and force re-render.
-      }
-  
-      // 2) Apply font to the object
-      obj.set("fontFamily", font);
-  
-      // 3) Recompute layout/metrics
-      // initDimensions computes width/height based on font metrics
-      if (typeof (obj as any).initDimensions === "function") {
-        try { obj.initDimensions(); } catch (e) { /* ignore */ }
-      }
-  
-      // 4) Clear Fabric caching that can preserve old drawing
-      // markDirty / set('dirty', true) depends on Fabric version; do both
-      try { (obj as any).dirty = true; } catch {}
-      try { obj.set("dirty", true); } catch {}
-      // If object caching is enabled, clear its cache
-      try { (obj as any).canvas && (obj as any)._clearCache && (obj as any)._clearCache(); } catch {}
-      try { (obj as any)._clearCache && (obj as any)._clearCache(); } catch {}
-  
-      // 5) update coordinates and request fresh draw
-      if (typeof (obj as any).setCoords === "function") obj.setCoords();
-  
-      // small micro-yield so the browser has time to paint between many fonts (prevents jank)
-      await new Promise((r) => setTimeout(r, 0));
+
+      await reloadFontForTextbox(obj, font);
     }
-  
-    // Final render
+
     canvas.requestRenderAll();
   }
 
+  // New function to properly reload fonts for a textbox
+  async function reloadFontForTextbox(textbox: Textbox, font: string) {
+    // First, ensure the font is fully loaded
+    await ensureFontLoaded(font);
+    
+    // Store all current properties
+    const currentText = textbox.text;
+    const currentWidth = textbox.width;
+    const currentLeft = textbox.left;
+    const currentTop = textbox.top;
+    const currentScaleX = textbox.scaleX;
+    const currentScaleY = textbox.scaleY;
+    const currentAngle = textbox.angle;
+    const currentFill = textbox.fill;
+    const currentFontSize = textbox.fontSize;
+    const currentTextAlign = textbox.textAlign;
+    const currentLineHeight = textbox.lineHeight;
+    const currentCharSpacing = textbox.charSpacing;
+    const currentStyles = textbox.styles;
+    
+    // Create a temporary textbox to force proper font measurement
+    const tempTextbox = new Textbox(currentText, {
+      fontFamily: font,
+      fontSize: currentFontSize,
+      width: currentWidth,
+      left: 0,
+      top: 0,
+      fill: currentFill,
+      textAlign: currentTextAlign,
+      lineHeight: currentLineHeight,
+      charSpacing: currentCharSpacing,
+      styles: currentStyles,
+    });
+    
+    // Force Fabric to measure with the new font
+    tempTextbox.initDimensions();
+    
+    // Now update the original textbox with proper metrics
+    textbox.set({
+      fontFamily: font,
+      fontSize: currentFontSize,
+      width: currentWidth,
+      height: tempTextbox.height,
+      scaleX: currentScaleX,
+      scaleY: currentScaleY,
+      left: currentLeft,
+      top: currentTop,
+      angle: currentAngle,
+      fill: currentFill,
+      textAlign: currentTextAlign,
+      lineHeight: currentLineHeight,
+      charSpacing: currentCharSpacing,
+      styles: currentStyles,
+    });
+    
+    // Clear all caches in Fabric 6.0+
+    clearFabricTextCaches(textbox);
+    
+    // Reinitialize dimensions
+    textbox.initDimensions();
+    textbox.setCoords();
+    
+    // Mark as dirty
+    textbox.set('dirty', true);
+    textbox.canvas?.requestRenderAll();
+  }
+
+  // Function to clear all Fabric 6.0+ text caches
+  function clearFabricTextCaches(textbox: Textbox) {
+    const tb = textbox as any;
+    
+    // Clear the main caches
+    tb._clearCache?.();
+    
+    // Clear text measurement caches
+    tb.__lineHeights = null;
+    tb.__lineWidths = null;
+    tb._textLines = null;
+    tb._unwrappedTextLines = null;
+    tb._charBounds = null;
+    
+    // Clear dynamic width cache
+    tb.dynamicMinWidth = 0;
+    
+    // Clear style caches
+    if (tb._styleProperties) {
+      tb._styleProperties = null;
+    }
+    
+    // Clear path and offset caches
+    tb._path = null;
+    tb._offsets = null;
+    
+    // Clear rendering caches
+    if (tb._cacheCanvas) {
+      tb._cacheCanvas = null;
+    }
+    
+    // Force cache clearing
+    tb.forceCacheClear?.();
+  }
+  
   // Update text elements list from canvas
   const updateTextElementsList = () => {
     const canvas = fabricCanvasRef.current;
@@ -284,9 +412,39 @@ export function useFabric(options?: UseFabricOptions) {
   }
   
   // Add text element
-  const addTextElement = () => {
+  // const addTextElement = () => {
+  //   const canvas = fabricCanvasRef.current;
+  //   if (!canvas) return;
+
+  //   const textBox = new Textbox("New Text".toUpperCase(), {
+  //     left: 100,
+  //     top: 100 + textElements.length * 50,
+  //     width: 200,
+  //     fontSize: DefualtTextSettings.fontSize,
+  //     fill: DefualtTextSettings.textColor,
+  //     fontFamily: DefualtTextSettings.fontFamily,
+  //     textAlign: "center",
+  //   });
+    
+
+  //   (textBox as any).id = Date.now().toString() + Math.random();
+  //   makeTextboxResizable(textBox, canvas);
+  //   applydefualt(textBox);
+
+  //   canvas.add(textBox);
+  //   canvas.setActiveObject(textBox);
+  //   canvas.renderAll();
+  //   updateTextElementsList();
+  //   setSelectedElement((textBox as any).id);
+  // };
+
+  // Update the addTextElement function to use the new font loading
+  const addTextElement = async () => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
+
+    // Ensure font is loaded before creating textbox
+    await ensureFontLoaded(DefualtTextSettings.fontFamily);
 
     const textBox = new Textbox("New Text".toUpperCase(), {
       left: 100,
@@ -297,10 +455,14 @@ export function useFabric(options?: UseFabricOptions) {
       fontFamily: DefualtTextSettings.fontFamily,
       textAlign: "center",
     });
-    applydefualt(textBox);
-
+    
     (textBox as any).id = Date.now().toString() + Math.random();
-    makeTextboxResizable(textBox, canvas)
+    makeTextboxResizable(textBox, canvas);
+    applydefualt(textBox);
+    
+    // Force initial font measurement
+    clearFabricTextCaches(textBox);
+    textBox.initDimensions();
 
     canvas.add(textBox);
     canvas.setActiveObject(textBox);
@@ -334,16 +496,17 @@ export function useFabric(options?: UseFabricOptions) {
 
     console.log(template.textElements);
     // Add template text elements
-    template.textElements.forEach((element) => {
-      const textBox = deserializeTextElement(element, canvas);
-      (textBox as any).id = element.id || Date.now().toString() + Math.random();
-
+    template.textElements.forEach(async (element) => {
+      const textBox = await deserializeTextElement(element);
       canvas.add(textBox);
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+      makeTextboxResizable(textBox, canvas)
+
     });
 
     canvas.renderAll();
     updateTextElementsList();
-    refreshFontsAfterResize();
   };
 
   async function downloadCanvas() {

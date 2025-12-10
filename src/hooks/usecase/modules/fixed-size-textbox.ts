@@ -47,7 +47,7 @@ export function makeTextboxResizable(
     return realOriginalCalcTextHeight.call(textbox)
   }
 
-  // Function to check if text fits with a given font size
+  // // Function to check if text fits with a given font size
   // function checkFitsAtFontSize(fontSize: number): { fitsWidth: boolean; fitsHeight: boolean } {
   //   // Set font size for measurement
   //   textbox.set({ fontSize })
@@ -65,6 +65,7 @@ export function makeTextboxResizable(
   //   const text = textbox.text || ""
   //   const lines = text.split('\n')
   //   let maxLineWidth = 0
+  //   const zoom = canvas.getZoom();
     
   //   const ctx = canvas.getContext()
   //   const fontString = textbox._getFontDeclaration()
@@ -73,16 +74,19 @@ export function makeTextboxResizable(
   //     ctx.save()
   //     ctx.font = fontString
       
-  //     const metrics = ctx.measureText(line)
-  //     maxLineWidth = Math.max(maxLineWidth, metrics.width)
+  //     // const metrics = ctx.measureText(line);
+  //     const metrics = ctx.measureText(line).width / zoom;
+  //     maxLineWidth = Math.max(maxLineWidth, metrics)//.width)
   //     ctx.restore()
   //   }
+
+  //   console.log(maxLineWidth, zoom, "news")
 
   //   // Add padding for outline and general spacing
   //   maxLineWidth += 3 //+ strokePadding
     
   //   // Check height constraint (with wrapping applied) - use REAL calculation
-  //   const textHeight = getActualTextHeight() //+ strokePadding
+  //   const textHeight = getActualTextHeight()/zoom //+ strokePadding
     
   //   return {
   //     fitsWidth: maxLineWidth <= containerWidth,
@@ -90,40 +94,48 @@ export function makeTextboxResizable(
   //   }
   // }
 
-  function checkFitsAtFontSize(fontSize: number) {
-    const zoom = canvas.getZoom();
-  
-    // Font size must ignore zoom
-    textbox.set({ fontSize: fontSize / zoom });
-    textbox._clearCache();
-  
-    const containerWidth = textbox.width || 200;
-    const containerHeight = textbox.height || 100;
-  
-    const ctx = canvas.getContext();
-    const fontString = textbox._getFontDeclaration();
-  
-    let maxLineWidth = 0;
-  
-    for (const line of (textbox.text || "").split("\n")) {
-      if (!line) continue;
-  
-      ctx.save();
-      ctx.font = fontString;
-      const measured = ctx.measureText(line).width;
-      ctx.restore();
-  
-      // Correct zoom distortion
-      maxLineWidth = Math.max(maxLineWidth, measured / zoom);
+  function checkFitsAtFontSize(realFontSize: number): { fitsWidth: boolean; fitsHeight: boolean } {
+    const zoom = canvas.getZoom()
+
+    // Normalize font size: Fabric actual size = realFontSize / zoom
+    const appliedSize = realFontSize / zoom
+
+    textbox.set({ fontSize: appliedSize })
+    textbox._clearCache()
+    
+    const containerWidth = textbox.width || 200
+    const containerHeight = textbox.height || 100
+    
+    // Check width constraint (no wrapping)
+    const text = textbox.text || ""
+    const lines = text.split("\n")
+    let maxLineWidth = 0
+    
+    console.log(canvas)
+    const ctx = canvas.getContext()
+    const fontString = textbox._getFontDeclaration()
+    
+    for (const line of lines) {
+      if (!line) continue
+      
+      ctx.save()
+      ctx.font = fontString
+      const metrics = ctx.measureText(line).width
+      ctx.restore()
+      
+      // normalize measurement (undo zoom)
+      maxLineWidth = Math.max(maxLineWidth, metrics / zoom)
     }
-  
-    // Correct REAL text height
+
+    maxLineWidth += 3 // small padding
+    
+    // Check height constraint (using true height)
     const textHeight = getActualTextHeight() / zoom;
-  
+
     return {
       fitsWidth: maxLineWidth <= containerWidth,
       fitsHeight: textHeight <= containerHeight,
-    };
+    }
   }
   
   // Function to check if text fits and auto-adjust font size

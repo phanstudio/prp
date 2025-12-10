@@ -95,46 +95,153 @@ function batchLoadFonts(fonts: string[]): void {
 // -------------------------------------------------------
 // Ensure a single font is loaded before applying
 // -------------------------------------------------------
+// export async function ensureFontLoaded(fontFamily: string): Promise<void> {
+//   if (loadedFonts.has(fontFamily)) return;
+//   if (loadingFonts.has(fontFamily)) return loadingFonts.get(fontFamily)!;
+
+//   // System fonts are always available
+//   if (SYSTEM_FONTS.includes(fontFamily)) {
+//     loadedFonts.add(fontFamily);
+//     return;
+//   }
+
+//   // Always load web fonts directly (no detection)
+//   const url = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(
+//     / /g,
+//     "+"
+//   )}&display=swap`;
+
+//   const loadPromise = new Promise<void>((resolve) => {
+//     const link = document.createElement("link");
+//     link.rel = "stylesheet";
+//     link.href = url;
+
+//     link.onload = () => {
+//       loadedFonts.add(fontFamily);
+//       loadingFonts.delete(fontFamily);
+//       console.log(`✨ Loaded font: ${fontFamily}`);
+//       resolve();
+//     };
+
+//     link.onerror = () => {
+//       console.warn(`❌ Failed to load font: ${fontFamily}`);
+//       loadingFonts.delete(fontFamily);
+//       resolve();
+//     };
+
+//     document.head.appendChild(link);
+//   });
+
+//   loadingFonts.set(fontFamily, loadPromise);
+//   return loadPromise;
+// }
+
+// Update the fontLoader utility to be more robust
 export async function ensureFontLoaded(fontFamily: string): Promise<void> {
-  if (loadedFonts.has(fontFamily)) return;
-  if (loadingFonts.has(fontFamily)) return loadingFonts.get(fontFamily)!;
-
-  // System fonts are always available
-  if (SYSTEM_FONTS.includes(fontFamily)) {
-    loadedFonts.add(fontFamily);
-    return;
+  // Create a test element with the font
+  const testElement = document.createElement('span');
+  testElement.style.fontFamily = fontFamily;
+  testElement.style.fontSize = '16px';
+  testElement.style.position = 'absolute';
+  testElement.style.left = '-9999px';
+  testElement.style.visibility = 'hidden';
+  testElement.textContent = 'test';
+  
+  document.body.appendChild(testElement);
+  
+  try {
+    // Try to load the font with multiple approaches
+    const fontLoadPromises = [];
+    
+    // Approach 1: Use document.fonts.load if available
+    if (document.fonts && document.fonts.load) {
+      fontLoadPromises.push(
+        document.fonts.load(`16px "${fontFamily}"`).catch(() => {})
+      );
+    }
+    
+    // Approach 2: Use fonts.ready
+    if (document.fonts && document.fonts.ready) {
+      fontLoadPromises.push(
+        document.fonts.ready.then(() => {}).catch(() => {})
+      );
+    }
+    
+    // Approach 3: Use a timeout fallback
+    fontLoadPromises.push(
+      new Promise<void>((resolve) => {
+        // Check if font is loaded by comparing metrics
+        const originalWidth = testElement.offsetWidth;
+        const originalHeight = testElement.offsetHeight;
+        
+        let checkCount = 0;
+        const maxChecks = 50; // 5 seconds max
+        
+        const checkFont = () => {
+          checkCount++;
+          
+          // Change to a known fallback font and compare
+          testElement.style.fontFamily = `"${fontFamily}", monospace`;
+          const newWidth = testElement.offsetWidth;
+          const newHeight = testElement.offsetHeight;
+          
+          // If dimensions changed or we've tried enough times
+          if (newWidth !== originalWidth || newHeight !== originalHeight || checkCount >= maxChecks) {
+            resolve();
+          } else {
+            setTimeout(checkFont, 100);
+          }
+        };
+        
+        setTimeout(checkFont, 100);
+      })
+    );
+    
+    await Promise.race([
+      Promise.all(fontLoadPromises),
+      new Promise(resolve => setTimeout(resolve, 5000)) // 5 second timeout
+    ]);
+  } finally {
+    // Clean up test element
+    if (document.body.contains(testElement)) {
+      document.body.removeChild(testElement);
+    }
   }
-
-  // Always load web fonts directly (no detection)
-  const url = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(
-    / /g,
-    "+"
-  )}&display=swap`;
-
-  const loadPromise = new Promise<void>((resolve) => {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = url;
-
-    link.onload = () => {
-      loadedFonts.add(fontFamily);
-      loadingFonts.delete(fontFamily);
-      console.log(`✨ Loaded font: ${fontFamily}`);
-      resolve();
-    };
-
-    link.onerror = () => {
-      console.warn(`❌ Failed to load font: ${fontFamily}`);
-      loadingFonts.delete(fontFamily);
-      resolve();
-    };
-
-    document.head.appendChild(link);
-  });
-
-  loadingFonts.set(fontFamily, loadPromise);
-  return loadPromise;
 }
+
+// Also add this function to handle initial font loading when setting text
+// export async function setTextWithFont(textbox: Textbox, text: string, fontFamily: string) {
+//   await ensureFontLoaded(fontFamily);
+  
+//   // Store current dimensions
+//   const currentWidth = textbox.width;
+//   const currentScaleX = textbox.scaleX;
+//   const currentScaleY = textbox.scaleY;
+  
+//   // Set the font first
+//   textbox.set('fontFamily', fontFamily);
+  
+//   // Clear caches
+//   clearFabricTextCaches(textbox);
+  
+//   // Set the text
+//   textbox.set('text', text);
+  
+//   // Reinitialize with new font
+//   textbox.initDimensions();
+  
+//   // Restore dimensions
+//   textbox.set({
+//     width: currentWidth,
+//     scaleX: currentScaleX,
+//     scaleY: currentScaleY,
+//   });
+  
+//   textbox.setCoords();
+//   textbox.set('dirty', true);
+  
+//   return textbox;
+// }
 
 // -------------------------------------------------------
 // Helpers

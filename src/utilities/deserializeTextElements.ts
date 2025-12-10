@@ -1,5 +1,4 @@
-import { Textbox, Shadow, type Canvas } from "fabric";
-import { makeTextboxResizable } from "../hooks/usecase/modules/fixed-size-textbox";
+import { Textbox, Shadow } from "fabric";
 import { DefualtTextSettings } from "../components/types";
 import { ensureFontLoaded } from "../utilities/fontLoader";
 import { applyDefaultNewShad } from "../hooks/usecase/text-manager";
@@ -24,7 +23,7 @@ function safeNumber(value: any, fallback = 0): number {
 /**
  * Deserialize a single text element from template data into a Fabric Textbox
  */
-export function deserializeTextElement(el: any, canvas: Canvas): Textbox {
+export async function deserializeTextElement(el: any): Promise<Textbox> {
   const effectType = el.effectType || "none"
   
   // Determine if we should apply outline based on effectType
@@ -56,7 +55,7 @@ export function deserializeTextElement(el: any, canvas: Canvas): Textbox {
         offsetY: safeNumber(el.shadow?.offsetY ?? el.shadowOffsetY, 5),
       })
     : undefined
-  ensureFontLoaded(el.fontFamily);
+  await ensureFontLoaded(el.fontFamily || DefualtTextSettings.fontFamily);
   const textBox = new Textbox(el.text || "", {
     left: safeNumber(el.x, 100),
     top: safeNumber(el.y, 100),
@@ -96,29 +95,46 @@ export function deserializeTextElement(el: any, canvas: Canvas): Textbox {
   (textBox as any).maxFontSize = safeNumber(el.fontSize, DefualtTextSettings.fontSize);
 
   ;(textBox as any)._fixedHeight = safeNumber(el.height, 50);
+  // Clear caches and initialize
+  clearFabricTextCaches(textBox);
+  textBox.initDimensions();
 
-  makeTextboxResizable(textBox, canvas);
   return textBox;
 }
 
-/**
- * Load a full template (array of text elements) into the canvas
- */
-export function loadTemplateToCanvas(template: { textElements: any[] }, canvas: Canvas, updateList?: () => void) {
-  if (!canvas || !template?.textElements) return;
-
-  // Remove existing textboxes
-  const existing = canvas.getObjects().filter((obj) => obj instanceof Textbox);
-  existing.forEach((obj) => canvas.remove(obj));
-
-  // Add each new text element
-  template.textElements.forEach((el) => {
-    const textBox = deserializeTextElement(el, canvas);
-    canvas.add(textBox);
-  });
-
-  canvas.renderAll();
-  updateList?.();
+// Function to clear all Fabric 6.0+ text caches
+function clearFabricTextCaches(textbox: Textbox) {
+  const tb = textbox as any;
+  
+  // Clear the main caches
+  tb._clearCache?.();
+  
+  // Clear text measurement caches
+  tb.__lineHeights = null;
+  tb.__lineWidths = null;
+  tb._textLines = null;
+  tb._unwrappedTextLines = null;
+  tb._charBounds = null;
+  
+  // Clear dynamic width cache
+  tb.dynamicMinWidth = 0;
+  
+  // Clear style caches
+  if (tb._styleProperties) {
+    tb._styleProperties = null;
+  }
+  
+  // Clear path and offset caches
+  tb._path = null;
+  tb._offsets = null;
+  
+  // Clear rendering caches
+  if (tb._cacheCanvas) {
+    tb._cacheCanvas = null;
+  }
+  
+  // Force cache clearing
+  tb.forceCacheClear?.();
 }
 
 /**
