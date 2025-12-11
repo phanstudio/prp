@@ -659,7 +659,7 @@ export function makeTextboxResizable(
       const textHeight = realOriginalCalcTextHeight.call(textbox);
       
       // Add small padding for safety
-      const paddedMaxLineWidth = maxLineWidth + 0;
+      const paddedMaxLineWidth = maxLineWidth + 4;
       const paddedTextHeight = textHeight + 4;
       
       return {
