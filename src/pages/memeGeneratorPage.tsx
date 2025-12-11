@@ -16,7 +16,7 @@ export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) =>
     deleteSelectedElement,
     loadTemplate,
     textManager,
-    downloadCanvas
+    downloadCanvas,
   } = useFabric({
     watermarkConfig: {
       text: "postrugphotos.xyz",
@@ -90,3 +90,4 @@ export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) =>
 };
 
 export default MemeGenerator;
+

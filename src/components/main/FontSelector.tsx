@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { allFonts, recommendedFonts } from "../../utilities/fontList";
 import {
   queueFontLoad,
-  ensureFontLoaded,
+  ensureFontLoadedsync,
   isFontLoaded,
   isFontLoading
 } from "../../utilities/fontLoader";
@@ -33,7 +33,7 @@ const FontSelector: React.FC<FontSelectorProps> = ({ value, onChange }) => {
   useEffect(() => {
     if (initRef.current) return;
     if (value && !isFontLoaded(value)) {
-      ensureFontLoaded(value).then(() => {
+      ensureFontLoadedsync(value).then(() => {
         onChange(value);
         forceUpdate((prev) => prev + 1);
       });
@@ -120,7 +120,7 @@ const FontSelector: React.FC<FontSelectorProps> = ({ value, onChange }) => {
   // Handle selecting a font
   // -----------------------------------------
   const handleFontSelect = async (fontName: string) => {
-    await ensureFontLoaded(fontName);
+    await ensureFontLoadedsync(fontName);
     onChange(fontName);
     setSearch("");
     (document.activeElement as HTMLElement)?.blur();
