@@ -502,7 +502,59 @@ export function useFabric(options?: UseFabricOptions) {
   // };
   
   
-  const loadTemplate = (template: { textElements: any[] }) => {
+  // const loadTemplate = (template: { textElements: any[] }) => {
+  //   const canvas = fabricCanvasRef.current;
+  //   if (!canvas) return;
+  
+  //   // Clear existing text objects
+  //   const objects = canvas.getObjects().filter((obj) => obj instanceof Textbox);
+  //   objects.forEach((obj) => canvas.remove(obj));
+  
+  //   // Use a counter to track loaded elements
+  //   let loadedCount = 0;
+  //   const totalElements = template.textElements.length;
+  //   let currentArray:any[] = [];
+  
+  //   template.textElements.forEach((element) => {
+  //     // Create textbox synchronously
+  //     deserializeTextElement(element)
+  //       .then((textBox) => {
+  //         // Add to canvas immediately
+  //         if (!currentArray.includes(textBox)){//textBox not in currentArray){
+  //           canvas.add(textBox);
+  //         }
+          
+  //         makeTextboxResizable(textBox, canvas);
+  //         loadedCount++;
+  
+  //         // Check if all elements are loaded
+  //         if (loadedCount === totalElements) {
+  //           // Schedule final render after all elements are added
+  //           setTimeout(() => {
+  //             canvas.discardActiveObject();
+  //             canvas.requestRenderAll();
+  //             updateTextElementsList();
+  //           }, 0);
+  //         }
+  //       })
+  //       .catch((error) => {
+  //         console.error('Failed to load text element:', error);
+  //         loadedCount++;
+          
+  //         // Still check for completion even if some failed
+  //         if (loadedCount === totalElements) {
+  //           setTimeout(() => {
+  //             canvas.requestRenderAll();
+  //             updateTextElementsList();
+  //           }, 0);
+  //         }
+  //       });
+  //   });
+  //   // Initial render
+  //   canvas.renderAll();
+  // };
+
+  const loadTemplate = async (template: { textElements: any[] }) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
   
@@ -510,48 +562,32 @@ export function useFabric(options?: UseFabricOptions) {
     const objects = canvas.getObjects().filter((obj) => obj instanceof Textbox);
     objects.forEach((obj) => canvas.remove(obj));
   
-    // Use a counter to track loaded elements
-    let loadedCount = 0;
-    const totalElements = template.textElements.length;
-    let currentArray:any[] = [];
-  
-    template.textElements.forEach((element) => {
-      // Create textbox synchronously
+    // Use Promise.all to wait for all text elements to be loaded
+    const loadPromises = template.textElements.map((element) =>
       deserializeTextElement(element)
         .then((textBox) => {
-          // Add to canvas immediately
-          if (!currentArray.includes(textBox)){//textBox not in currentArray){
-            canvas.add(textBox);
-          }
-          
+          canvas.add(textBox);
           makeTextboxResizable(textBox, canvas);
-          loadedCount++;
-  
-          // Check if all elements are loaded
-          if (loadedCount === totalElements) {
-            // Schedule final render after all elements are added
-            setTimeout(() => {
-              canvas.discardActiveObject();
-              canvas.requestRenderAll();
-              updateTextElementsList();
-            }, 0);
-          }
+          return textBox;
         })
         .catch((error) => {
           console.error('Failed to load text element:', error);
-          loadedCount++;
-          
-          // Still check for completion even if some failed
-          if (loadedCount === totalElements) {
-            setTimeout(() => {
-              canvas.requestRenderAll();
-              updateTextElementsList();
-            }, 0);
-          }
-        });
-    });
-    // Initial render
-    canvas.renderAll();
+          return null; // Return null for failed elements
+        })
+    );
+  
+    // Wait for all promises to resolve
+    try {
+      await Promise.all(loadPromises);
+      
+      // After all elements are loaded, perform final operations
+      canvas.discardActiveObject();
+      canvas.requestRenderAll();
+      updateTextElementsList();
+    } catch (error) {
+      console.error('Failed to load template:', error);
+      canvas.requestRenderAll();
+    }
   };
   
 
