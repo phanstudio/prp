@@ -1,4 +1,6 @@
-import { Link } from "react-router-dom";
+import React from "react";
+import { Link, NavLink } from "react-router-dom";
+import { Home, Settings, ShieldCheck, LogOut, Menu, Sparkles } from "lucide-react";
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -7,67 +9,141 @@ interface HeaderProps {
   onLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ isAuthenticated, isAdmin, username, onLogout }) => {
+export const Header: React.FC<HeaderProps> = ({
+  isAuthenticated,
+  isAdmin,
+  username,
+  onLogout,
+}) => {
   return (
-    <header className="fixed top-0 left-0 right-0 z-40">
-      <nav className="navbar bg-base-200 shadow-sm lg:px-20">
-        <div className="navbar-start">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-base-100/85 backdrop-blur-md border-b border-base-200/80 shadow-xs">
+      <nav className="navbar max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="navbar-start gap-2">
+          {/* Mobile dropdown */}
           <div className="dropdown">
-            <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16"/>
-              </svg>
+            <div tabIndex={0} role="button" className="btn btn-ghost btn-sm btn-square lg:hidden">
+              <Menu className="w-5 h-5" />
             </div>
             <ul
               tabIndex={0}
-              className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
+              className="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-56 p-2 shadow-xl border border-base-200"
             >
-              <li><Link to={"/"}>Home</Link></li>
-              {/* <li><Link to={"#"}>About</Link></li> */}
-              {isAdmin &&(
-                <li><Link to={"/admin"} className="text-accent">Admin</Link></li>
+              <li>
+                <NavLink to="/" end className={({ isActive }) => (isActive ? "active font-semibold" : "")}>
+                  <Home className="w-4 h-4" /> Home
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/settings" className={({ isActive }) => (isActive ? "active font-semibold" : "")}>
+                  <Settings className="w-4 h-4" /> Settings
+                </NavLink>
+              </li>
+              {isAdmin && (
+                <li>
+                  <NavLink to="/admin" className={({ isActive }) => (isActive ? "active font-semibold text-accent" : "text-accent")}>
+                    <ShieldCheck className="w-4 h-4" /> Admin Studio
+                  </NavLink>
+                </li>
               )}
+              <div className="divider my-1"></div>
               {isAuthenticated ? (
-                <>
-                  <button className="btn btn-sm" onClick={onLogout}>Logout</button>
-                </>
+                <li>
+                  <button onClick={onLogout} className="text-error gap-2">
+                    <LogOut className="w-4 h-4" /> Logout
+                  </button>
+                </li>
               ) : (
-                <div className="gap-1 flex flex-col items-center">
-                  <Link to={"/login"} className="btn w-full btn-sm">Login</Link>
-                  <Link to={"/register"} className="btn w-full btn-primary btn-sm">Get started - it's free</Link>
+                <div className="flex flex-col gap-1.5 p-1">
+                  <Link to="/login" className="btn btn-sm btn-outline w-full">
+                    Login
+                  </Link>
+                  <Link to="/register" className="btn btn-sm btn-primary w-full">
+                    Register
+                  </Link>
                 </div>
               )}
             </ul>
           </div>
-          <Link to={"/"} className="btn btn-ghost text-xl">PostRugPhotos</Link>
+
+          <Link to="/" className="flex items-center gap-2 font-bold text-lg sm:text-xl tracking-tight">
+            <div className="w-8 h-8 rounded-lg bg-primary text-primary-content flex items-center justify-center shadow-xs">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <span>PostRugPhotos</span>
+          </Link>
         </div>
 
+        {/* Desktop Navigation */}
         <div className="navbar-center hidden lg:flex">
-          <ul className="menu menu-horizontal px-1">
-            <li><Link to={"/"}>Home</Link></li>
-            {/* <li><Link to={"#"}>About</Link></li> */}
-            {isAdmin &&(
-                <li><Link to={"/admin"} className="text-accent">Admin</Link></li>
-              )}
+          <ul className="menu menu-horizontal px-1 gap-1 text-sm font-medium">
+            <li>
+              <NavLink
+                to="/"
+                end
+                className={({ isActive }) =>
+                  `rounded-lg px-3 py-1.5 transition-colors ${
+                    isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
+                  }`
+                }
+              >
+                <Home className="w-4 h-4" />
+                Templates
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/settings"
+                className={({ isActive }) =>
+                  `rounded-lg px-3 py-1.5 transition-colors ${
+                    isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
+                  }`
+                }
+              >
+                <Settings className="w-4 h-4" />
+                Settings
+              </NavLink>
+            </li>
+            {isAdmin && (
+              <li>
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) =>
+                    `rounded-lg px-3 py-1.5 transition-colors text-accent ${
+                      isActive ? "bg-accent/10 font-bold" : "hover:bg-accent/10"
+                    }`
+                  }
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  Admin Studio
+                </NavLink>
+              </li>
+            )}
           </ul>
         </div>
 
-        <div className="navbar-end hidden lg:flex">
+        {/* Right side authentication */}
+        <div className="navbar-end hidden lg:flex items-center gap-3">
           {isAuthenticated ? (
-            <>
-              <span className="mr-2">Welcome, {username}</span>
-              <button className="btn" onClick={onLogout}>Logout</button>
-            </>
+            <div className="flex items-center gap-2">
+              <div className="badge badge-neutral badge-sm py-2 px-3">
+                {username || "User"}
+              </div>
+              <button
+                onClick={onLogout}
+                className="btn btn-sm btn-ghost btn-square text-base-content/70 hover:text-error"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           ) : (
-            <div className="space-x-2">
-              <Link to={"/login"} className="btn">Login</Link>
-              <Link to={"/register"} className="btn btn-primary">Get started - it's free</Link>
+            <div className="flex items-center gap-2">
+              <Link to="/login" className="btn btn-sm btn-ghost">
+                Login
+              </Link>
+              <Link to="/register" className="btn btn-sm btn-primary shadow-xs">
+                Get Started
+              </Link>
             </div>
           )}
         </div>

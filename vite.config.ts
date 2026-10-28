@@ -54,6 +54,6 @@ export default defineConfig({
   ],
 
   optimizeDeps: {
-    include: ["fabric"]
+    include: ["konva", "react-konva"]
   }
 });

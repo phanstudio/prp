@@ -38,7 +38,7 @@ export const GOOGLE_FONTS = [
   "Black Ops One",
   "Chewy",
   "Creepster",
-  "Fredoka One",
+  "Fredoka",
   "Gloria Hallelujah",
   "Lobster",
   "Luckiest Guy",

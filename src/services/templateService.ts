@@ -7,10 +7,10 @@ export default class TemplateService {
   private static axios = authService.getAxiosInstance();
 
   // Fetch templates from backend
-  static async getTemplates(search?: string, skip = 0, limit = 10): Promise<Template[]> {
+  static async getTemplates(search?: string, skip = 0, limit = 10, tag?: string, sort?: string): Promise<Template[]> {
     try {
       const response = await this.axios.get<Template[]>('/templates', {
-        params: { search, skip, limit }
+        params: { search, skip, limit, tag, sort }
       });
       const data = humps.camelizeKeys(response.data);
       return data.map((t: any) => ({
@@ -103,9 +103,9 @@ export default class TemplateService {
   static async updateTemplate(
     id: string, 
     updates: Partial<Template>,
-    // file?: File,
-    file2?: File
-  ): Promise<any> { // Template
+    file2?: File | null,
+    file?: File | null
+  ): Promise<any> {
     try {
       const formData = new FormData();
       
@@ -116,24 +116,23 @@ export default class TemplateService {
       if (updates.textElements) {
         formData.append('text_elements', JSON.stringify(humps.decamelizeKeys(updates.textElements)));
       }
-      if (updates.imageUrl) formData.append('image_url', updates.imageUrl);
-      if (updates.thumbnailUrl) formData.append('thumbnail_url', updates.thumbnailUrl);
+      if (updates.imageUrl && updates.imageUrl.startsWith("http")) {
+        formData.append('image_url', updates.imageUrl);
+      }
+      if (updates.thumbnailUrl && updates.thumbnailUrl.startsWith("http")) {
+        formData.append('thumbnail_url', updates.thumbnailUrl);
+      }
       
       // Add files if provided
+      if (file) formData.append('file', file);
       if (file2) formData.append('file2', file2);
 
-      // const response = 
-      await this.axios.put<any>(`/templates/${id}`, formData, {
+      const response = await this.axios.put<any>(`/templates/${id}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      // const data = humps.camelizeKeys(response.data);
-      // return {
-      //   ...data,
-      //   createdAt: new Date(data.createdAt)
-      // };
-      return
+      return response.data;
     } catch (error) {
       console.error('Failed to update template:', error);
       throw error;

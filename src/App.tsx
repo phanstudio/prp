@@ -5,7 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { TemplateCreatorRoute, GalleryRoute, MemeGeneratorRoute, MemeEditorRoute } from './utilities/router';
+import { TemplateCreatorRoute, GalleryRoute, MemeGeneratorRoute, MemeEditorRoute, SettingsRoute } from './utilities/router';
 import { RegularLayout, AdminLayout } from "./utilities/layouts";
 import 'unfonts.css'  // Required for unplugin-fonts
 import './font.css';
@@ -35,6 +35,7 @@ const AppRoutes: React.FC = () => {
               <Route element={<RegularLayout />}>
                 <Route path="/" element={<GalleryRoute />} />
                 <Route path="/about" element={<GalleryRoute />} />
+                <Route path="/settings" element={<SettingsRoute />} />
                 <Route path="/generator/:templateId" element={<MemeGeneratorRoute />} />
               </Route>
 
@@ -50,6 +51,7 @@ const AppRoutes: React.FC = () => {
                 <Route index element={<GalleryRoute isAdmin />} />
                 <Route path="creator" element={<TemplateCreatorRoute />} />
                 <Route path="edit/:templateId" element={<MemeEditorRoute />} />
+                <Route path="settings" element={<SettingsRoute />} />
               </Route>
 
               {/* Fallback */}

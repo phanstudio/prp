@@ -35,30 +35,38 @@ function extractOpacityFromColor(color?: string): number | undefined {
  * This prevents circular reference errors when saving to backend
  */
 export const serializeTextElement = (element: any): TextElement => {
-  console.log(element)
   const shadowProps = extractShadowProps(element.shadow);
   return {
     id: element.id,
     text: element.text,
-    x: element.x || element.left,
-    y: element.y || element.top,
-    fontSize: element._maxFontSize ?? element.fontSize,
-    color: element.fill,
-    fontFamily: element.fontFamily,
-    rotation: normalizeRotation(element.rotation),
+    x: element.x ?? element.left ?? 0,
+    y: element.y ?? element.top ?? 0,
+    fontSize: element.fontSize ?? element._maxFontSize ?? 36,
+    color: element.color ?? element.fill ?? "#000000",
+    fontFamily: element.fontFamily || "Arial",
+    rotation: normalizeRotation(element.rotation ?? element.angle ?? 0),
     width: element.width,
     height: element.height,
     
-    // Optional properties
-    ...(element.stroke && { outlineColor: element.stroke }),
-    ...(element.strokeWidth !== undefined && { outlineSize: element.strokeWidth }),
-    ...(element.textAlign && { textAlign: element.textAlign }),
-    ...(element.fontWeight && { fontWeight: element.fontWeight }),
-    ...(element.fontStyle && { fontStyle: element.fontStyle }),
-    ...(element.underline !== undefined && { underline: element.underline }),
-    ...(element.linethrough !== undefined && { linethrough: element.linethrough }),
-    ...(element.effectType && { effectType: element.effectType }),
-    ...shadowProps,
+    // Outline / stroke
+    outlineColor: element.outlineColor ?? element.stroke ?? undefined,
+    outlineSize: element.outlineSize !== undefined ? element.outlineSize : (element.strokeWidth !== undefined ? element.strokeWidth : undefined),
+    
+    // Formatting
+    textAlign: element.textAlign,
+    fontWeight: element.fontWeight,
+    fontStyle: element.fontStyle,
+    underline: element.underline ?? false,
+    linethrough: element.linethrough ?? false,
+    effectType: element.effectType ?? (element.outlineSize || element.strokeWidth ? "outline" : "none"),
+    allCaps: element.allCaps,
+
+    // Shadow
+    shadowColor: element.shadowColor ?? shadowProps.shadowColor,
+    shadowBlur: element.shadowBlur ?? shadowProps.shadowBlur,
+    shadowOffsetX: element.shadowOffsetX ?? shadowProps.shadowOffsetX,
+    shadowOffsetY: element.shadowOffsetY ?? shadowProps.shadowOffsetY,
+    shadowOpacity: element.shadowOpacity ?? shadowProps.shadowOpacity,
   };
 };
 

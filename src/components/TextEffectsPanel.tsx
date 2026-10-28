@@ -15,222 +15,269 @@ interface TextEffectsPanelProps {
   updateProperty: (props: Partial<TextEffectsPanelProps["currentTextProps"]>) => void;
 }
 
-// function rgbaToHex(rgba: string|undefined) {
-//   if  (!rgba) return "#000000";
-//   if (rgba.startsWith("#")) return rgba
-//   const result = rgba.match(/\d+/g);
-//   if (!result) return "#000000";
-//   const [r, g, b] = result.map(Number);
-//   return (
-//     "#" +
-//     [r, g, b]
-//       .map((x) => x.toString(16).padStart(2, "0"))
-//       .join("")
-//       .toUpperCase()
-//   );
-// }
-
-
 export const TextEffectsPanel: React.FC<TextEffectsPanelProps> = ({
   currentTextProps,
   updateProperty,
 }) => {
-  return (
-    <div>
-      <label className="label-text text-xs mb-1 block">Text Effect</label>
+  const currentEffect = currentTextProps.effectType ?? "outline";
 
-      {/* Effect Type Buttons */}
-      <div className="flex gap-2 mb-2">
-        {(["none", "newShadow", "outline"] as TextEffectType[]).map((effect) => (
+  const handleSelectEffect = (effect: TextEffectType) => {
+    if (effect === "none") {
+      updateProperty({
+        effectType: "none",
+        strokeWidth: 0,
+        shadowBlur: 0,
+        shadowOpacity: 0,
+        shadowOffsetX: 0,
+        shadowOffsetY: 0,
+      });
+    } else if (effect === "outline") {
+      updateProperty({
+        effectType: "outline",
+        strokeColor: currentTextProps.strokeColor || DefualtTextSettings.outlineStrokeColor,
+        strokeWidth: currentTextProps.strokeWidth ?? DefualtTextSettings.outlineStrokeWidth,
+        shadowBlur: 0,
+        shadowOpacity: 0,
+      });
+    } else if (effect === "newShadow" || effect === "shadow") {
+      updateProperty({
+        effectType: "newShadow",
+        strokeColor: currentTextProps.strokeColor || DefualtTextSettings.outlineStrokeColor,
+        strokeWidth: currentTextProps.strokeWidth ?? DefualtTextSettings.shadowStrokeWidth,
+        shadowColor: currentTextProps.shadowColor || DefualtTextSettings.shadowColor,
+        shadowBlur: currentTextProps.shadowBlur ?? DefualtTextSettings.shadowBlur,
+        shadowOffsetX: currentTextProps.shadowOffsetX ?? DefualtTextSettings.shadowOffsetX,
+        shadowOffsetY: currentTextProps.shadowOffsetY ?? DefualtTextSettings.shadowOffsetY,
+        shadowOpacity: currentTextProps.shadowOpacity ?? DefualtTextSettings.shadowOpacity,
+      });
+    }
+  };
+
+  const shadowOpacityPercent = Math.round(
+    (currentTextProps.shadowOpacity ?? DefualtTextSettings.shadowOpacity) * 100
+  );
+
+  return (
+    <div className="space-y-3">
+      {/* Effect Selector Header */}
+      <div>
+        <label className="label-text text-xs font-semibold mb-1 block">Text Effect</label>
+        <div className="join w-full grid grid-cols-3">
           <button
-            key={effect}
-            className={`btn btn-xs ${
-              currentTextProps.effectType === effect ? "btn-primary" : "btn-ghost"
+            type="button"
+            className={`btn btn-xs join-item ${
+              currentEffect === "none" ? "btn-primary" : "btn-outline border-base-300"
             }`}
-            // onClick={() => updateProperty({ effectType: effect })}
-            onClick={() => {
-              let resetProps: Partial<TextEffectsPanelProps["currentTextProps"]> = {}
-      
-              // Reset defaults when switching effect type
-              if (effect === "outline") {
-                resetProps = {
-                  strokeColor: DefualtTextSettings.outlineStrokeColor,
-                  strokeWidth: DefualtTextSettings.outlineStrokeWidth,
-                }
-              } else if (effect === "newShadow") {
-                resetProps = {
-                  strokeColor: DefualtTextSettings.outlineStrokeColor,
-                  strokeWidth: DefualtTextSettings.shadowStrokeWidth,
-                }
-              } else if (effect === "none") {
-                resetProps = {
-                  strokeColor: undefined,
-                  strokeWidth: undefined,
-                  shadowColor: undefined,
-                  shadowBlur: undefined,
-                  shadowOffsetX: undefined,
-                  shadowOffsetY: undefined,
-                  shadowOpacity: undefined,
-                }
-              }
-      
-              // Merge effectType + defaults
-              updateProperty({
-                effectType: effect,
-                ...resetProps,
-              })
-            }}
+            onClick={() => handleSelectEffect("none")}
           >
-            {effect.charAt(0).replace("newShadow", "shadow").toUpperCase() + effect.slice(1)}
+            None
           </button>
-        ))}
+          <button
+            type="button"
+            className={`btn btn-xs join-item ${
+              currentEffect === "outline" ? "btn-primary" : "btn-outline border-base-300"
+            }`}
+            onClick={() => handleSelectEffect("outline")}
+          >
+            Outline
+          </button>
+          <button
+            type="button"
+            className={`btn btn-xs join-item ${
+              currentEffect === "newShadow" || currentEffect === "shadow"
+                ? "btn-primary"
+                : "btn-outline border-base-300"
+            }`}
+            onClick={() => handleSelectEffect("newShadow")}
+          >
+            Shadow + Stroke
+          </button>
+        </div>
       </div>
 
-      {/* --- SHADOW CONTROLS --- */}
-      {/* {currentTextProps.effectType === "shadow" && (
-        <div className="space-y-2 p-2 bg-base-200 rounded">
-          <div className="grid grid-cols-2 gap-2">
+      {/* --- OUTLINE ONLY CONTROLS --- */}
+      {currentEffect === "outline" && (
+        <div className="p-3 bg-base-200/70 border border-base-300 rounded-lg space-y-3">
+          <div className="grid grid-cols-2 gap-3 items-center">
             <div>
-              <label className="label-text text-xs">Shadow Color</label>
-              <input
-                type="color"
-                className="input input-xs input-bordered w-full h-8"
-                value={rgbaToHex(currentTextProps.shadowColor) || DefualtTextSettings.shadowColor}
-                onChange={(e) => updateProperty({ shadowColor: e.target.value })}
-              />
+              <label className="label-text text-[11px] font-medium block mb-1">
+                Outline Color
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  className="input input-xs input-bordered w-10 h-8 p-1 cursor-pointer"
+                  value={currentTextProps.strokeColor || DefualtTextSettings.outlineStrokeColor}
+                  onChange={(e) => updateProperty({ strokeColor: e.target.value })}
+                />
+                <span className="text-xs font-mono text-base-content/70 uppercase">
+                  {currentTextProps.strokeColor || DefualtTextSettings.outlineStrokeColor}
+                </span>
+              </div>
             </div>
             <div>
-              <label className="label-text text-xs">Opacity</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="label-text text-[11px] font-medium">Outline Width</label>
+                <span className="badge badge-xs badge-neutral">
+                  {currentTextProps.strokeWidth ?? DefualtTextSettings.outlineStrokeWidth}px
+                </span>
+              </div>
               <input
                 type="range"
                 min="0"
-                max="1"
-                step="0.05"
-                className="range range-xs"
-                value={currentTextProps.shadowOpacity ?? DefualtTextSettings.shadowOpacity}
-                onChange={(e) =>
-                  updateProperty({ shadowOpacity: parseFloat(e.target.value) })
-                }
-              />
-              <div className="text-xs text-center">
-                {((currentTextProps.shadowOpacity ?? DefualtTextSettings.shadowOpacity) * 100).toFixed(0)}%
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="label-text text-xs">Blur</label>
-            <input
-              type="range"
-              min="0"
-              max="30"
-              className="range range-xs"
-              value={currentTextProps.shadowBlur ?? DefualtTextSettings.shadowBlur}
-              onChange={(e) => updateProperty({ shadowBlur: parseInt(e.target.value) })}
-            />
-            <div className="text-xs text-center">
-              {currentTextProps.shadowBlur}px
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="label-text text-xs">Offset X</label>
-              <input
-                type="range"
-                min="-20"
                 max="20"
-                className="range range-xs"
-                value={currentTextProps.shadowOffsetX ?? DefualtTextSettings.shadowOffsetX}
-                onChange={(e) =>
-                  updateProperty({ shadowOffsetX: parseInt(e.target.value) })
-                }
+                step="1"
+                className="range range-xs range-primary"
+                value={currentTextProps.strokeWidth ?? DefualtTextSettings.outlineStrokeWidth}
+                onChange={(e) => updateProperty({ strokeWidth: parseInt(e.target.value) || 0 })}
               />
-              <div className="text-xs text-center">
-                {currentTextProps.shadowOffsetX}px
-              </div>
-            </div>
-            <div>
-              <label className="label-text text-xs">Offset Y</label>
-              <input
-                type="range"
-                min="-20"
-                max="20"
-                className="range range-xs"
-                value={currentTextProps.shadowOffsetY ?? DefualtTextSettings.shadowOffsetY}
-                onChange={(e) =>
-                  updateProperty({ shadowOffsetY: parseInt(e.target.value) })
-                }
-              />
-              <div className="text-xs text-center">
-                {currentTextProps.shadowOffsetY}px
-              </div>
-            </div>
-          </div>
-        </div>
-      )} */}
-
-      {/* --- OUTLINE SHADOW CONTROLS --- */}
-      {currentTextProps.effectType === "newShadow" && (
-        <div className="space-y-2 p-2 bg-base-200 rounded">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="label-text text-xs">Shad-Outline Color</label>
-              <input
-                type="color"
-                className="input input-xs input-bordered w-full h-8"
-                value={currentTextProps.strokeColor || DefualtTextSettings.outlineStrokeColor}
-                onChange={(e) => updateProperty({ strokeColor: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="label-text text-xs">Shad-Width</label>
-              <input
-                type="range"
-                min="1"
-                max="20"
-                className="range range-xs"
-                value={currentTextProps.strokeWidth ?? DefualtTextSettings.shadowStrokeWidth}
-                onChange={(e) =>
-                  updateProperty({ strokeWidth: parseInt(e.target.value) })
-                }
-              />
-              <div className="text-xs text-center">
-                {currentTextProps.strokeWidth}px
-              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- OUTLINE CONTROLS --- */}
-      {currentTextProps.effectType === "outline" && (
-        <div className="space-y-2 p-2 bg-base-200 rounded">
-          <div className="grid grid-cols-2 gap-2">
+      {/* --- SHADOW + STROKE CONTROLS --- */}
+      {(currentEffect === "newShadow" || currentEffect === "shadow") && (
+        <div className="p-3 bg-base-200/70 border border-base-300 rounded-lg space-y-3">
+          {/* Shadow Color & Opacity */}
+          <div className="grid grid-cols-2 gap-3 items-center">
             <div>
-              <label className="label-text text-xs">Outline Color</label>
-              <input
-                type="color"
-                className="input input-xs input-bordered w-full h-8"
-                value={currentTextProps.strokeColor || DefualtTextSettings.outlineStrokeColor}
-                onChange={(e) => updateProperty({ strokeColor: e.target.value })}
-              />
+              <label className="label-text text-[11px] font-medium block mb-1">
+                Shadow Color
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  className="input input-xs input-bordered w-10 h-8 p-1 cursor-pointer"
+                  value={currentTextProps.shadowColor || DefualtTextSettings.shadowColor}
+                  onChange={(e) => updateProperty({ shadowColor: e.target.value })}
+                />
+                <span className="text-xs font-mono text-base-content/70 uppercase">
+                  {currentTextProps.shadowColor || DefualtTextSettings.shadowColor}
+                </span>
+              </div>
             </div>
+
             <div>
-              <label className="label-text text-xs">Width</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="label-text text-[11px] font-medium">Opacity</label>
+                <span className="badge badge-xs badge-neutral">{shadowOpacityPercent}%</span>
+              </div>
               <input
                 type="range"
-                min="1"
-                max="20"
-                className="range range-xs"
-                value={currentTextProps.strokeWidth ?? DefualtTextSettings.outlineStrokeWidth}
+                min="0"
+                max="1"
+                step="0.05"
+                className="range range-xs range-primary"
+                value={currentTextProps.shadowOpacity ?? DefualtTextSettings.shadowOpacity}
                 onChange={(e) =>
-                  updateProperty({ strokeWidth: parseInt(e.target.value) })
+                  updateProperty({ shadowOpacity: parseFloat(e.target.value) })
                 }
               />
-              <div className="text-xs text-center">
-                {currentTextProps.strokeWidth}px
+            </div>
+          </div>
+
+          {/* Shadow Blur */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="label-text text-[11px] font-medium">Blur</label>
+              <span className="badge badge-xs badge-neutral">
+                {currentTextProps.shadowBlur ?? DefualtTextSettings.shadowBlur}px
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="30"
+              step="1"
+              className="range range-xs range-primary"
+              value={currentTextProps.shadowBlur ?? DefualtTextSettings.shadowBlur}
+              onChange={(e) =>
+                updateProperty({ shadowBlur: parseInt(e.target.value) || 0 })
+              }
+            />
+          </div>
+
+          {/* Distance / Offset Controls */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="label-text text-[11px] font-medium">Offset X</label>
+                <span className="badge badge-xs badge-neutral">
+                  {currentTextProps.shadowOffsetX ?? DefualtTextSettings.shadowOffsetX}px
+                </span>
               </div>
+              <input
+                type="range"
+                min="-25"
+                max="25"
+                step="1"
+                className="range range-xs"
+                value={currentTextProps.shadowOffsetX ?? DefualtTextSettings.shadowOffsetX}
+                onChange={(e) =>
+                  updateProperty({ shadowOffsetX: parseInt(e.target.value) || 0 })
+                }
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="label-text text-[11px] font-medium">Offset Y</label>
+                <span className="badge badge-xs badge-neutral">
+                  {currentTextProps.shadowOffsetY ?? DefualtTextSettings.shadowOffsetY}px
+                </span>
+              </div>
+              <input
+                type="range"
+                min="-25"
+                max="25"
+                step="1"
+                className="range range-xs"
+                value={currentTextProps.shadowOffsetY ?? DefualtTextSettings.shadowOffsetY}
+                onChange={(e) =>
+                  updateProperty({ shadowOffsetY: parseInt(e.target.value) || 0 })
+                }
+              />
+            </div>
+          </div>
+
+          {/* Outline / Stroke border inside shadow mode */}
+          <div className="pt-2 border-t border-base-300 grid grid-cols-2 gap-3 items-center">
+            <div>
+              <label className="label-text text-[11px] font-medium block mb-1">
+                Stroke Color
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  className="input input-xs input-bordered w-10 h-8 p-1 cursor-pointer"
+                  value={currentTextProps.strokeColor || DefualtTextSettings.outlineStrokeColor}
+                  onChange={(e) => updateProperty({ strokeColor: e.target.value })}
+                />
+                <span className="text-xs font-mono text-base-content/70 uppercase">
+                  {currentTextProps.strokeColor || DefualtTextSettings.outlineStrokeColor}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="label-text text-[11px] font-medium">Stroke Width</label>
+                <span className="badge badge-xs badge-neutral">
+                  {currentTextProps.strokeWidth ?? DefualtTextSettings.shadowStrokeWidth}px
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="20"
+                step="1"
+                className="range range-xs"
+                value={currentTextProps.strokeWidth ?? DefualtTextSettings.shadowStrokeWidth}
+                onChange={(e) =>
+                  updateProperty({ strokeWidth: parseInt(e.target.value) || 0 })
+                }
+              />
             </div>
           </div>
         </div>

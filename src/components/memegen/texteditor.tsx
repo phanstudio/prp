@@ -1,171 +1,160 @@
 import React from "react";
 import { DefualtTextSettings } from "../types";
 import FontSelector from "../main/FontSelector";
-import type { TextProperties, TextManager } from "../../hooks/usecase/text-manager";
+import type { TextProperties } from "../../hooks/usecase/use-konva";
 import { TextEffectsPanel } from "../TextEffectsPanel";
-import { Trash2Icon, Copy } from "lucide-react";
 
-// Text Editor Component
 interface TextEditorProps {
   element: TextProperties | null;
-  currentTextProps: TextProperties | null
+  currentTextProps: TextProperties | null;
   updateProperty: (props: Partial<TextProperties>) => void;
   onDelete: () => void;
-  textManager: TextManager|null;
-  textValue: string|null
+  textManager: any;
+  textValue: string | null;
 }
 
-const TextEditor: React.FC<TextEditorProps> = (
-  { element, updateProperty, onDelete, currentTextProps, textManager, textValue }) => {
-  // if (!element || !currentTextProps) {
-  //   return (
-  //     <div className="text-gray-500 text-sm text-center py-4">
-  //       Select a text element to edit it
-  //     </div>
-  //   );
-  // }
+const TextEditor: React.FC<TextEditorProps> = ({
+  element,
+  updateProperty,
+  currentTextProps,
+  textValue,
+}) => {
+  const activeProps = currentTextProps || element;
+  if (!activeProps) return null;
 
   return (
-    <div className="space-y-3 p-2">
-      <div>
-        <label className="label-text text-xs">Color:</label>
-        <input
-          type="color"
-          value={currentTextProps?.fill || element?.fill || DefualtTextSettings.textColor}
-          onChange={(e) => updateProperty({fill: e.target.value})}
-          className="input input-xs input-bordered w-full h-8"
-        />
-      </div>
-      
-      <div>
-        <label className="label-text text-xs">Max Font Size: {currentTextProps?.maxFontSize||element?.maxFontSize||DefualtTextSettings.fontSize}px</label>
-        <input
-          type="range" min="12" max="100" className="range range-sm"
-          value={currentTextProps?.maxFontSize|| element?.maxFontSize || DefualtTextSettings.fontSize}
-          onChange={(e) =>
-            updateProperty({ maxFontSize: parseInt(e.target.value) })
-          }
-        />
-      </div>
+    <div className="space-y-3.5 text-xs">
+      {/* Font Size & Text Color */}
+      <div className="grid grid-cols-2 gap-3 items-center">
+        <div>
+          <div className="flex justify-between items-center mb-1">
+            <label className="label-text text-[11px] font-medium">Font Size</label>
+            <span className="badge badge-xs badge-neutral">
+              {activeProps.maxFontSize || DefualtTextSettings.fontSize}px
+            </span>
+          </div>
+          <input
+            type="range"
+            min="12"
+            max="100"
+            step="1"
+            className="range range-xs range-primary"
+            value={activeProps.maxFontSize || DefualtTextSettings.fontSize}
+            onChange={(e) => updateProperty({ maxFontSize: parseInt(e.target.value) || 20 })}
+          />
+        </div>
 
-      {/* Font Styles */}
-      <div>
-        <label className="label-text text-xs mb-1 block">Text Style</label>
-        <div className="flex gap-2">
-          <button
-            className={`btn btn-xs ${
-              (currentTextProps?.fontWeight||element?.fontWeight) === "bold"
-                ? "btn-primary"
-                : "btn-ghost"
-            }`}
-            onClick={() =>
-              updateProperty({
-                fontWeight:
-                currentTextProps?.fontWeight === "bold"
-                    ? "normal"
-                    : "bold",
-              })
-            }
-          >
-            <b>B</b>
-          </button>
-
-          <button
-            className={`btn btn-xs ${
-              (currentTextProps?.fontStyle || element?.fontStyle) === "italic"
-                ? "btn-primary"
-                : "btn-ghost"
-            }`}
-            onClick={() =>
-              updateProperty({
-                fontStyle:
-                currentTextProps?.fontStyle === "italic"
-                    ? "normal"
-                    : "italic",
-              })
-            }
-          >
-            <i>I</i>
-          </button>
-
-          <button
-            className={`btn btn-xs ${
-              (currentTextProps?.underline||element?.underline)
-                ? "btn-primary"
-                : "btn-ghost"
-            }`}
-            onClick={() =>
-              updateProperty({
-                underline: !currentTextProps?.underline,
-              })
-            }
-          >
-            <u>U</u>
-          </button>
-
-          <button
-            className={`btn btn-xs ${
-              (currentTextProps?.allCaps ?? (element?.text == element?.text?.toUpperCase())
-            ) ? "btn-primary" : "btn-ghost"}`}
-            onClick={() =>
-              updateProperty({ allCaps: !currentTextProps?.allCaps, text: textValue??element?.text })
-            }
-          >
-            Aa
-          </button>
-
+        <div>
+          <label className="label-text text-[11px] font-medium block mb-1">Color</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={activeProps.fill || DefualtTextSettings.textColor}
+              onChange={(e) => updateProperty({ fill: e.target.value })}
+              className="input input-xs input-bordered w-9 h-8 p-1 cursor-pointer"
+            />
+            <span className="text-xs font-mono uppercase text-base-content/70">
+              {activeProps.fill || DefualtTextSettings.textColor}
+            </span>
+          </div>
         </div>
       </div>
-      
-      {/* Text Alignment */}
-      <div>
-        <label className="label-text text-xs mb-1 block">Alignment</label>
-        <div className="flex gap-2">
-          {(["left", "center", "right"] as const).map((align) => (
+
+      {/* Font Selector */}
+      <FontSelector
+        value={activeProps.fontFamily || DefualtTextSettings.fontFamily}
+        onChange={(font) => updateProperty({ fontFamily: font })}
+      />
+
+      {/* Styles & Alignment */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="label-text text-[11px] font-medium mb-1 block">Style</label>
+          <div className="join w-full">
             <button
-              key={align}
-              className={`btn btn-xs ${
-                (currentTextProps?.textAlign || element?.textAlign) === align
-                  ? "btn-primary"
-                  : "btn-ghost"
+              type="button"
+              className={`btn btn-xs join-item flex-1 ${
+                activeProps.fontWeight === "bold" ? "btn-primary" : "btn-outline border-base-300"
               }`}
-              onClick={() => updateProperty({ textAlign: align })}
+              onClick={() =>
+                updateProperty({
+                  fontWeight: activeProps.fontWeight === "bold" ? "normal" : "bold",
+                })
+              }
+              title="Bold"
             >
-              {align[0].toUpperCase()}
+              <strong>B</strong>
             </button>
-          ))}
+            <button
+              type="button"
+              className={`btn btn-xs join-item flex-1 ${
+                activeProps.fontStyle === "italic" ? "btn-primary" : "btn-outline border-base-300"
+              }`}
+              onClick={() =>
+                updateProperty({
+                  fontStyle: activeProps.fontStyle === "italic" ? "normal" : "italic",
+                })
+              }
+              title="Italic"
+            >
+              <em>I</em>
+            </button>
+            <button
+              type="button"
+              className={`btn btn-xs join-item flex-1 ${
+                activeProps.underline ? "btn-primary" : "btn-outline border-base-300"
+              }`}
+              onClick={() => updateProperty({ underline: !activeProps.underline })}
+              title="Underline"
+            >
+              <u>U</u>
+            </button>
+            <button
+              type="button"
+              className={`btn btn-xs join-item flex-1 ${
+                activeProps.allCaps ? "btn-primary" : "btn-outline border-base-300"
+              }`}
+              onClick={() =>
+                updateProperty({
+                  allCaps: !activeProps.allCaps,
+                  text: textValue ?? activeProps.text,
+                })
+              }
+              title="All Caps"
+            >
+              AA
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="label-text text-[11px] font-medium mb-1 block">Alignment</label>
+          <div className="join w-full">
+            {(["left", "center", "right"] as const).map((align) => (
+              <button
+                key={align}
+                type="button"
+                className={`btn btn-xs join-item flex-1 capitalize ${
+                  activeProps.textAlign === align ? "btn-primary" : "btn-outline border-base-300"
+                }`}
+                onClick={() => updateProperty({ textAlign: align })}
+              >
+                {align}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      { currentTextProps &&
-          <TextEffectsPanel
+      {/* Effects Panel */}
+      {currentTextProps && (
+        <TextEffectsPanel
           currentTextProps={currentTextProps}
           updateProperty={updateProperty}
         />
-      }
-      
-      <FontSelector
-        value={currentTextProps?.fontFamily|| element?.fontFamily || DefualtTextSettings.fontFamily}
-        onChange={(font) => updateProperty({ fontFamily: font })}
-      />
-      
-      <div className="join w-full">
-        <button
-          onClick={textManager?.duplicateSelectedText}
-          className="btn btn-info text-sm join-item"
-        >
-          <Copy size={16}/>
-        </button>
-
-        <button
-          onClick={onDelete}
-          className="btn btn-error text-sm join-item"
-        >
-          <Trash2Icon size={16}/>
-        </button>
-      </div>
+      )}
     </div>
   );
 };
 
-export default TextEditor
+export default TextEditor;

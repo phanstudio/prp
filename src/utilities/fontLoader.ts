@@ -1,50 +1,54 @@
-import { SYSTEM_FONTS } from "./fontList";
-
-// -------------------------------------------------------
-// Critical fonts: load immediately
-// -------------------------------------------------------
-const CRITICAL_FONTS = ["Impact", "Roboto", "Arial"];
-
-// -------------------------------------------------------
-// Popular fonts: lazy-load on scroll
-// -------------------------------------------------------
-const POPULAR_FONTS = [
-  "Comic Sans MS", "Poppins", "Montserrat", "Open Sans", "Lato",
-  "Bebas Neue", "Lobster", "Pacifico", "Oswald", "Raleway",
-  "Ubuntu", "Inter", "Playfair Display", "Merriweather", "Rubik",
-  "Work Sans", "Nunito", "PT Sans", "Mukta", "Barlow",
-  "Quicksand", "Kanit", "DM Sans", "Karla", "Manrope",
-  "Space Grotesk", "Plus Jakarta Sans", "Anton"
-];
-
-// -------------------------------------------------------
-// Internal state
-// -------------------------------------------------------
 const loadedFonts = new Set<string>();
 const loadingFonts = new Map<string, Promise<void>>();
 const fontLoadQueue = new Set<string>();
 let batchLoadTimer: ReturnType<typeof setTimeout> | null = null;
 
-// -------------------------------------------------------
-// Initialize loader: mark critical fonts as loaded immediately
-// -------------------------------------------------------
-export function initFontLoader(): void {
-  CRITICAL_FONTS.forEach((f) => loadedFonts.add(f));
-  SYSTEM_FONTS.forEach((f) => loadedFonts.add(f));
+// Built-in OS fonts that never need network download
+const OS_BUILTIN_FONTS = new Set(["Arial", "Times New Roman", "Courier New", "Verdana"]);
 
-  console.log("🎨 Font loader initialized");
-  console.log(`📦 Critical fonts: ${CRITICAL_FONTS.join(", ")}`);
-  console.log(`⏳ Popular fonts available: ${POPULAR_FONTS.length}`);
+// Aliases for Google Fonts that have been renamed upstream
+const FONT_ALIASES: Record<string, string> = {
+  "Fredoka One": "Fredoka",
+};
+
+/**
+ * Initializes font loader and preloads primary meme fonts
+ */
+export function initFontLoader(): void {
+  preloadCommonMemeFonts();
 }
 
-// -------------------------------------------------------
-// Queue a font for batch loading (IntersectionObserver trigger)
-// -------------------------------------------------------
-export function queueFontLoad(fontFamily: string): void {
-  if (loadedFonts.has(fontFamily) || loadingFonts.has(fontFamily)) return;
-  if (SYSTEM_FONTS.includes(fontFamily)) return; // system font: skip
+/**
+ * Checks if a font is available and ready in document.fonts
+ */
+export function isFontLoaded(fontFamily: string): boolean {
+  if (!fontFamily) return true;
+  const cleanFamily = fontFamily.replace(/["']/g, "").trim();
+  if (loadedFonts.has(cleanFamily)) {
+    return true;
+  }
+  if (typeof document !== "undefined" && document.fonts && document.fonts.check) {
+    if (document.fonts.check(`16px "${cleanFamily}"`)) {
+      loadedFonts.add(cleanFamily);
+      return true;
+    }
+  }
+  return false;
+}
 
-  fontLoadQueue.add(fontFamily);
+export function isFontLoading(fontFamily: string): boolean {
+  const cleanFamily = (fontFamily || "").replace(/["']/g, "").trim();
+  return loadingFonts.has(cleanFamily);
+}
+
+/**
+ * Queue a font for batch loading (e.g. from FontSelector scroll list)
+ */
+export function queueFontLoad(fontFamily: string): void {
+  const cleanFamily = (fontFamily || "").replace(/["']/g, "").trim();
+  if (!cleanFamily || isFontLoaded(cleanFamily) || loadingFonts.has(cleanFamily)) return;
+
+  fontLoadQueue.add(cleanFamily);
 
   if (batchLoadTimer) clearTimeout(batchLoadTimer);
 
@@ -53,300 +57,132 @@ export function queueFontLoad(fontFamily: string): void {
       batchLoadFonts(Array.from(fontLoadQueue));
       fontLoadQueue.clear();
     }
-  }, 150);
+  }, 100);
 }
 
-// -------------------------------------------------------
-// Batch-load multiple fonts via a single Google Fonts request
-// -------------------------------------------------------
+/**
+ * Convert family name to Google Fonts URL format (spaces replaced with +)
+ */
+function toGoogleFontParam(family: string): string {
+  const target = FONT_ALIASES[family] || family;
+  return target.trim().replace(/\s+/g, "+");
+}
+
+/**
+ * Batch-load multiple fonts via Google Fonts
+ */
 function batchLoadFonts(fonts: string[]): void {
-  if (fonts.length === 0) return;
+  const missing = fonts.filter((f) => !isFontLoaded(f) && !OS_BUILTIN_FONTS.has(f));
+  if (missing.length === 0) return;
+
+  const fontFamilies = missing
+    .map((f) => `family=${toGoogleFontParam(f)}&display=swap`)
+    .join("&");
+  const url = `https://fonts.googleapis.com/css2?${fontFamilies}`;
 
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href =
-    `https://fonts.googleapis.com/css2?` +
-    fonts
-      .map((f) => `family=${f.replace(/ /g, "+")}:wght@400;700`)
-      .join("&") +
-    "&display=swap";
+  link.href = url;
 
-  const loadPromise = new Promise<void>((resolve) => {
-    link.onload = () => {
-      fonts.forEach((font) => {
-        loadedFonts.add(font);
-        loadingFonts.delete(font);
-      });
-      console.log(`📦 Batch-loaded fonts: ${fonts.join(", ")}`);
-      resolve();
-    };
-
-    link.onerror = () => {
-      console.warn("❌ Failed batch font load:", fonts);
-      fonts.forEach((font) => loadingFonts.delete(font));
-      resolve();
-    };
-  });
+  link.onload = async () => {
+    try {
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+    } catch {
+      // ignore
+    }
+    missing.forEach((f) => loadedFonts.add(f));
+  };
 
   document.head.appendChild(link);
-  fonts.forEach((font) => loadingFonts.set(font, loadPromise));
 }
 
-// -------------------------------------------------------
-// Ensure a single font is loaded before applying
-// -------------------------------------------------------
-export async function ensureFontLoadedsync(fontFamily: string): Promise<void> {
-  if (loadedFonts.has(fontFamily)) return;
-  if (loadingFonts.has(fontFamily)) return loadingFonts.get(fontFamily)!;
+/**
+ * Preload commonly used meme fonts on app startup
+ */
+export async function preloadCommonMemeFonts(): Promise<void> {
+  const priorityFonts = [
+    "Impact",
+    "Comic Sans MS",
+    "Arial",
+    "Anton",
+    "Bebas Neue",
+    "Oswald",
+    "Lobster",
+    "Permanent Marker",
+    "Black Ops One",
+    "Luckiest Guy",
+    "Press Start 2P",
+  ];
+  await Promise.allSettled(priorityFonts.map((f) => ensureFontLoaded(f)));
+}
 
-  // System fonts are always available
-  if (SYSTEM_FONTS.includes(fontFamily)) {
-    loadedFonts.add(fontFamily);
+/**
+ * Ensure a single font is fully downloaded, loaded, and parsed into document.fonts
+ * before canvas measurements and rendering take place.
+ */
+export async function ensureFontLoaded(fontFamily: string): Promise<void> {
+  if (!fontFamily) return;
+  const cleanFamily = fontFamily.replace(/["']/g, "").trim();
+
+  if (isFontLoaded(cleanFamily)) {
     return;
   }
 
-  // Always load web fonts directly (no detection)
-  const url = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(
-    / /g,
-    "+"
-  )}&display=swap`;
-
-  const loadPromise = new Promise<void>((resolve) => {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = url;
-
-    link.onload = () => {
-      loadedFonts.add(fontFamily);
-      loadingFonts.delete(fontFamily);
-      console.log(`✨ Loaded font: ${fontFamily}`);
-      resolve();
-    };
-
-    link.onerror = () => {
-      console.warn(`❌ Failed to load font: ${fontFamily}`);
-      loadingFonts.delete(fontFamily);
-      resolve();
-    };
-
-    document.head.appendChild(link);
-  });
-
-  loadingFonts.set(fontFamily, loadPromise);
-  return loadPromise;
-}
-
-// Update the fontLoader utility to be more robust
-// export async function ensureFontLoaded(fontFamily: string): Promise<void> {
-//   // Create a test element with the font
-//   const testElement = document.createElement('span');
-//   testElement.style.fontFamily = fontFamily;
-//   testElement.style.fontSize = '16px';
-//   testElement.style.position = 'absolute';
-//   testElement.style.left = '-9999px';
-//   testElement.style.visibility = 'hidden';
-//   testElement.textContent = 'test';
-  
-//   document.body.appendChild(testElement);
-  
-//   try {
-//     // Try to load the font with multiple approaches
-//     const fontLoadPromises = [];
-    
-//     // Approach 1: Use document.fonts.load if available
-//     if (document.fonts && document.fonts.load) {
-//       fontLoadPromises.push(
-//         document.fonts.load(`16px "${fontFamily}"`).catch(() => {})
-//       );
-//     }
-    
-//     // Approach 2: Use fonts.ready
-//     if (document.fonts && document.fonts.ready) {
-//       fontLoadPromises.push(
-//         document.fonts.ready.then(() => {}).catch(() => {})
-//       );
-//     }
-    
-//     // Approach 3: Use a timeout fallback
-//     fontLoadPromises.push(
-//       new Promise<void>((resolve) => {
-//         // Check if font is loaded by comparing metrics
-//         const originalWidth = testElement.offsetWidth;
-//         const originalHeight = testElement.offsetHeight;
-        
-//         let checkCount = 0;
-//         const maxChecks = 50; // 5 seconds max
-        
-//         const checkFont = () => {
-//           checkCount++;
-          
-//           // Change to a known fallback font and compare
-//           testElement.style.fontFamily = `"${fontFamily}", monospace`;
-//           const newWidth = testElement.offsetWidth;
-//           const newHeight = testElement.offsetHeight;
-          
-//           // If dimensions changed or we've tried enough times
-//           if (newWidth !== originalWidth || newHeight !== originalHeight || checkCount >= maxChecks) {
-//             resolve();
-//           } else {
-//             setTimeout(checkFont, 100);
-//           }
-//         };
-        
-//         setTimeout(checkFont, 100);
-//       })
-//     );
-    
-//     await Promise.race([
-//       Promise.all(fontLoadPromises),
-//       new Promise(resolve => setTimeout(resolve, 5000)) // 5 second timeout
-//     ]);
-//   } finally {
-//     // Clean up test element
-//     if (document.body.contains(testElement)) {
-//       document.body.removeChild(testElement);
-//     }
-//   }
-// }
-
-const fontCache = new Map<string, Promise<void>>();
-
-export async function ensureFontLoaded(fontFamily: string): Promise<void> {
-  // Check cache
-  if (fontCache.has(fontFamily)) {
-    return fontCache.get(fontFamily)!;
+  if (loadingFonts.has(cleanFamily)) {
+    return loadingFonts.get(cleanFamily);
   }
 
-  // Create a new promise for loading the font
-  const loadPromise = (async () => {
-    // Create a test element with the font
-    const testElement = document.createElement('span');
-    testElement.style.fontFamily = fontFamily;
-    testElement.style.fontSize = '16px';
-    testElement.style.position = 'absolute';
-    testElement.style.left = '-9999px';
-    testElement.style.visibility = 'hidden';
-    testElement.textContent = 'test';
-    
-    document.body.appendChild(testElement);
-    
+  const promise = (async () => {
     try {
-      // Try to load the font with multiple approaches
-      const fontLoadPromises = [];
-      
-      // Approach 1: Use document.fonts.load if available
-      if (document.fonts && document.fonts.load) {
-        fontLoadPromises.push(
-          document.fonts.load(`16px "${fontFamily}"`).catch(() => {})
-        );
-      }
-      
-      // Approach 2: Use fonts.ready
-      if (document.fonts && document.fonts.ready) {
-        fontLoadPromises.push(
-          document.fonts.ready.then(() => {}).catch(() => {})
-        );
-      }
-      
-      // Approach 3: Use a timeout fallback
-      fontLoadPromises.push(
-        new Promise<void>((resolve) => {
-          // Check if font is loaded by comparing metrics
-          const originalWidth = testElement.offsetWidth;
-          const originalHeight = testElement.offsetHeight;
-          
-          let checkCount = 0;
-          const maxChecks = 50; // 5 seconds max
-          
-          const checkFont = () => {
-            checkCount++;
-            
-            // Change to a known fallback font and compare
-            testElement.style.fontFamily = `"${fontFamily}", monospace`;
-            const newWidth = testElement.offsetWidth;
-            const newHeight = testElement.offsetHeight;
-            
-            // If dimensions changed or we've tried enough times
-            if (newWidth !== originalWidth || newHeight !== originalHeight || checkCount >= maxChecks) {
+      // Check if it's a local font defined in font.css (Impact, Comic Sans MS, Arial, etc.)
+      const isLocalFont = ["Impact", "Comic Sans MS", "Arial", "Times New Roman", "Courier New", "Verdana"].includes(cleanFamily);
+
+      if (!isLocalFont) {
+        // Inject Google Fonts stylesheet using standard '+' space separator (not %20)
+        const fontParam = toGoogleFontParam(cleanFamily);
+        const fontLinkId = `gfont-${fontParam.toLowerCase()}`;
+        if (!document.getElementById(fontLinkId)) {
+          const link = document.createElement("link");
+          link.id = fontLinkId;
+          link.rel = "stylesheet";
+          link.href = `https://fonts.googleapis.com/css2?family=${fontParam}&display=swap`;
+
+          await new Promise<void>((resolve) => {
+            link.onload = () => resolve();
+            link.onerror = () => {
+              console.warn(`Failed to fetch Google Fonts stylesheet for: ${cleanFamily} (${fontParam})`);
               resolve();
-            } else {
-              setTimeout(checkFont, 100);
-            }
-          };
-          
-          setTimeout(checkFont, 100);
-        })
-      );
-      
-      await Promise.race([
-        Promise.all(fontLoadPromises),
-        new Promise(resolve => setTimeout(resolve, 5000)) // 5 second timeout
-      ]);
-    } finally {
-      // Clean up test element
-      if (document.body.contains(testElement)) {
-        document.body.removeChild(testElement);
+            };
+            document.head.appendChild(link);
+          });
+        }
       }
+
+      // Await actual font glyph binary download via document.fonts API
+      if (typeof document !== "undefined" && document.fonts && document.fonts.load) {
+        await Promise.race([
+          Promise.all([
+            document.fonts.load(`16px "${cleanFamily}"`),
+            document.fonts.ready,
+          ]),
+          new Promise((resolve) => setTimeout(resolve, 2500)), // 2.5s safety timeout
+        ]);
+      }
+      loadedFonts.add(cleanFamily);
+    } catch (err) {
+      console.warn(`Font load error for ${cleanFamily}:`, err);
+    } finally {
+      loadingFonts.delete(cleanFamily);
     }
   })();
 
-  // Cache the promise
-  fontCache.set(fontFamily, loadPromise);
-
-  // Return the promise
-  return loadPromise;
+  loadingFonts.set(cleanFamily, promise);
+  return promise;
 }
 
-// Also add this function to handle initial font loading when setting text
-// export async function setTextWithFont(textbox: Textbox, text: string, fontFamily: string) {
-//   await ensureFontLoaded(fontFamily);
-  
-//   // Store current dimensions
-//   const currentWidth = textbox.width;
-//   const currentScaleX = textbox.scaleX;
-//   const currentScaleY = textbox.scaleY;
-  
-//   // Set the font first
-//   textbox.set('fontFamily', fontFamily);
-  
-//   // Clear caches
-//   clearFabricTextCaches(textbox);
-  
-//   // Set the text
-//   textbox.set('text', text);
-  
-//   // Reinitialize with new font
-//   textbox.initDimensions();
-  
-//   // Restore dimensions
-//   textbox.set({
-//     width: currentWidth,
-//     scaleX: currentScaleX,
-//     scaleY: currentScaleY,
-//   });
-  
-//   textbox.setCoords();
-//   textbox.set('dirty', true);
-  
-//   return textbox;
-// }
+// Alias for backwards compatibility
+export const ensureFontLoadedsync = ensureFontLoaded;
 
-// -------------------------------------------------------
-// Helpers
-// -------------------------------------------------------
-export function isFontLoaded(fontFamily: string): boolean {
-  return loadedFonts.has(fontFamily);
-}
 
-export function isFontLoading(fontFamily: string): boolean {
-  return loadingFonts.has(fontFamily);
-}
-
-export function getFontStats() {
-  return {
-    loaded: loadedFonts.size,
-    loading: loadingFonts.size,
-    queued: fontLoadQueue.size,
-    loadedList: Array.from(loadedFonts),
-  };
-}

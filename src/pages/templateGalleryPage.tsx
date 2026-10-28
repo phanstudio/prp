@@ -1,7 +1,6 @@
-// TemplateGallery.tsx
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Plus, Trash2, Search, Edit2, X } from "lucide-react";
+import { Plus, Trash2, Search, Edit2, X, SearchX, Sparkles } from "lucide-react";
 import type { Template } from "../components/types";
 import TemplateService from "../services/templateService";
 import { useTemplates } from "../contexts/TemplateContext";
@@ -25,13 +24,14 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   
   const [searchTerm, setSearchTerm] = useState(urlSearchTerm);
   const [selectedTag, setSelectedTag] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"newest" | "popular">("newest");
 
   const { templates, appendTemplatesPaginated, clearTemplates } = useTemplates();
 
   // pagination state
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const pageSize = 12; // adjust as needed
+  const pageSize = 12;
   const { addToast, removeToast } = useToast();
   
   // loading states
@@ -41,16 +41,21 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   const [searchError, setSearchError] = useState<string | null>(null);
 
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
-  const [_, setDeleteError] = useState<string | null>(null); //deleteError
+  const [_, setDeleteError] = useState<string | null>(null);
 
 
-  const fetchTemplates = async (pageNum: number, search: string = urlSearchTerm) => {
+  const fetchTemplates = async (
+    pageNum: number,
+    search: string = urlSearchTerm,
+    tag: string = selectedTag,
+    sort: string = sortBy
+  ) => {
     try {
       setSearchError(null);
-      const data = await TemplateService.getTemplates(search, (pageNum - 1) * pageSize, pageSize);
+      const data = await TemplateService.getTemplates(search, (pageNum - 1) * pageSize, pageSize, tag || undefined, sort);
       
       if (data.length < pageSize) {
-        setHasMore(false); // ✅ This hides "Load More"
+        setHasMore(false);
       } else {
         setHasMore(true);
       }
@@ -61,6 +66,26 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
       setSearchError('Failed to load templates. Please try again.');
       setHasMore(false);
     }
+  };
+
+  const handleTagChange = async (newTag: string) => {
+    setSelectedTag(newTag);
+    setPage(1);
+    setHasMore(true);
+    clearTemplates();
+    setIsSearching(true);
+    await fetchTemplates(1, searchTerm.trim(), newTag, sortBy);
+    setIsSearching(false);
+  };
+
+  const handleSortChange = async (newSort: "newest" | "popular") => {
+    setSortBy(newSort);
+    setPage(1);
+    setHasMore(true);
+    clearTemplates();
+    setIsSearching(true);
+    await fetchTemplates(1, searchTerm.trim(), selectedTag, newSort);
+    setIsSearching(false);
   };
 
   const performSearch = async () => {
@@ -268,19 +293,32 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
               </button>
             </div>
 
-            <div className="sm:w-48">
-              <select
-                className="select select-bordered w-full"
-                value={selectedTag}
-                onChange={(e) => setSelectedTag(e.target.value)}
-              >
-                <option value="">All Categories</option>
-                {allTags.map((tag) => (
-                  <option key={tag} value={tag}>
-                    {tag}
-                  </option>
-                ))}
-              </select>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="sm:w-44">
+                <select
+                  className="select select-bordered w-full"
+                  value={selectedTag}
+                  onChange={(e) => handleTagChange(e.target.value)}
+                >
+                  <option value="">All Categories</option>
+                  {allTags.map((tag) => (
+                    <option key={tag} value={tag}>
+                      {tag}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="sm:w-40">
+                <select
+                  className="select select-bordered w-full"
+                  value={sortBy}
+                  onChange={(e) => handleSortChange(e.target.value as "newest" | "popular")}
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="popular">Most Popular</option>
+                </select>
+              </div>
             </div>
           </div>
           
@@ -302,8 +340,8 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
           
           {/* Error message */}
           {searchError && (
-            <div className="alert alert-error mt-2">
-              <span>{searchError}</span>
+            <div className="alert alert-error mt-2 shadow-sm">
+              <span className="text-sm">{searchError}</span>
               <button
                 onClick={() => {
                   setSearchError(null);
@@ -318,36 +356,46 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
         </div>
       </div>
 
-      {/* Templates Grid */}
+      {/* Templates Grid / Empty States */}
       {filteredTemplates.length === 0 && !isInitialLoading && !isSearching ? (
-        <div className="text-center py-12">
-          <div className="text-base-content/60 mb-4">
-            {searchError ? (
-              "Failed to load templates."
-            ) : templates.length === 0 ? (
-              urlSearchTerm 
-                ? `No templates found for "${urlSearchTerm}"`
-                : "No templates created yet."
+        <div className="card bg-base-100 shadow-sm border border-base-200 text-center py-16 px-4 max-w-xl mx-auto my-8">
+          <div className="flex flex-col items-center">
+            {urlSearchTerm ? (
+              <>
+                <div className="p-4 bg-base-200 rounded-full mb-3">
+                  <SearchX className="w-8 h-8 text-base-content/60" />
+                </div>
+                <h3 className="text-lg font-bold mb-1">No templates found</h3>
+                <p className="text-sm text-base-content/70 mb-4">
+                  We couldn't find anything matching "<span className="font-medium">{urlSearchTerm}</span>".
+                </p>
+                <button onClick={clearSearch} className="btn btn-outline btn-sm">
+                  Clear Search
+                </button>
+              </>
             ) : (
-              "No templates match your search."
+              <>
+                <div className="p-4 bg-primary/10 text-primary rounded-full mb-3">
+                  <Sparkles className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold mb-1">No templates yet!</h3>
+                <p className="text-sm text-base-content/70 mb-4 max-w-xs">
+                  Create the first meme template to get started with the collection.
+                </p>
+                {isAdmin && (
+                  <button onClick={onCreateTemplate} className="btn btn-primary btn-sm">
+                    <Plus className="w-4 h-4" />
+                    Create Your First Template
+                  </button>
+                )}
+              </>
             )}
           </div>
-          {urlSearchTerm && !searchError && (
-            <button onClick={clearSearch} className="btn btn-outline">
-              Clear Search
-            </button>
-          )}
-          {isAdmin && templates.length === 0 && !urlSearchTerm && !searchError && (
-            <button onClick={onCreateTemplate} className="btn btn-primary">
-              <Plus className="w-4 h-4" />
-              Create Your First Template
-            </button>
-          )}
         </div>
       ) : isSearching && templates.length === 0 ? (
-        <div className="text-center py-12">
-          <span className="loading loading-spinner loading-lg"></span>
-          <p className="text-base-content/70 mt-4">Searching templates...</p>
+        <div className="text-center py-16">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <p className="text-base-content/70 mt-4 text-sm">Searching templates...</p>
         </div>
       ) : (
         <>
@@ -358,11 +406,17 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                 className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => onSelectTemplate(template)}
               >
-                <figure className="relative">
+                <figure className="relative bg-base-300">
                   <img
                     src={template.thumbnailUrl}
                     alt={template.name}
                     className="w-full h-48 object-cover"
+                    loading="lazy"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.onerror = null;
+                      target.src = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22%20height%3D%22200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%20200%22%3E%3Crect%20width%3D%22300%22%20height%3D%22200%22%20fill%3D%22%232a2e37%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23888%22%20font-size%3D%2214%22%20font-family%3D%22sans-serif%22%3EImage%20Unavailable%3C%2Ftext%3E%3C%2Fsvg%3E";
+                    }}
                   />
                   {isAdmin && (
                     <div className="join absolute top-2 right-2 gap-2">
@@ -371,13 +425,14 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                           e.stopPropagation();
                           deleteTemplate(template.id.toString(), e);
                         }}
-                        className="btn btn-sm btn-circle btn-error join-item disabled:!bg-neutral disabled:!opacity-80"
+                        className="btn btn-sm btn-circle btn-error shadow-sm disabled:!bg-neutral disabled:!opacity-80"
                         disabled={deletingIds.has(template.id.toString())}
+                        title="Delete Template"
                       >
                         {deletingIds.has(template.id.toString()) ? (
                           <span className="loading loading-spinner loading-xs text-error"/>
                         ) : (
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         )}
                       </button>
 
@@ -386,9 +441,10 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                           e.stopPropagation();
                           onEditTemplate(template);
                         }}
-                        className="btn btn-sm btn-circle btn-error join-item"
+                        className="btn btn-sm btn-circle btn-neutral shadow-sm"
+                        title="Edit Template"
                       >
-                        <Edit2 className="w-3 h-3" />
+                        <Edit2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   )}

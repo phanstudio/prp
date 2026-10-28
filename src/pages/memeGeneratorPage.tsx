@@ -1,13 +1,17 @@
 import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { toTitleCase } from "../utilities/utils";
 import type { Template } from "../components/types";
 import TextPanel from "../components/memegen/textpanel";
 import Faq from "../components/main/faq";
-import { useFabric } from "../hooks/usecase/use-fabric";
+import { useKonva } from "../hooks/usecase/use-konva";
 
 export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) => {
+  const navigate = useNavigate();
+
   const {
-    canvasRef,
+    StageCanvas,
     setBackgroundImage,
     textElements,
     selectedElement,
@@ -17,27 +21,22 @@ export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) =>
     loadTemplate,
     textManager,
     downloadCanvas,
-  } = useFabric({
+    copyCanvasToClipboard,
+  } = useKonva({
     watermarkConfig: {
       text: "postrugphotos.xyz",
-      mode: "download-only", // or "disabled" or "always"
-      position: "bottom-left",
-      fontSizeRatio: 0.02,
+      mode: "download-only",
+      placement: "bottom-left",
     },
   });
 
   // Initialize the template
   useEffect(() => {
-    // Load text elements
     loadTemplate({ textElements: template.textElements });
-
-    // Load background image
-    const img = new Image();
-    img.onload = async () => {
-      await setBackgroundImage(template.imageUrl);
-    };
-    img.src = template.imageUrl;
-  }, [template]);
+    if (template.imageUrl) {
+      setBackgroundImage(template.imageUrl);
+    }
+  }, [template, loadTemplate, setBackgroundImage]);
 
   const resetToTemplate = () => {
     loadTemplate({ textElements: template.textElements });
@@ -45,42 +44,79 @@ export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) =>
   };
 
   return (
-    <div className="p-0 lg:p-4 md:p-4 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 text-center">Meme Generator</h1>
-
-      <div className="flex card bg-base-100 shadow-sm">
-        <div className="card-body join join-vertical lg:join-horizontal">
-          {/* Canvas Area */}
-          <div className="flex-2 join-item items-center">
-            <div className="w-full gap-4 items-center">
-              <h1 className="text-3xl font-bold flex-shrink-0">
-                {toTitleCase(template.name)}
-              </h1>
-              <p className="text-base-content/70 truncate min-w-0 flex-1 md:max-w-[40vw] max-w-[80vw]">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+      {/* Top Navigation & Info Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-base-300 pb-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/")}
+            className="btn btn-sm btn-ghost gap-1.5 border border-base-300"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Templates
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+              {toTitleCase(template.name)}
+            </h1>
+            {template.description && (
+              <p className="text-xs text-base-content/70 mt-0.5 line-clamp-1">
                 {template.description}
               </p>
+            )}
+          </div>
+        </div>
+
+        {template.tags && template.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {template.tags.map((t) => (
+              <span key={t} className="badge badge-sm badge-outline">
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Main Studio Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Canvas Area */}
+        <div className="lg:col-span-2 card bg-base-100 shadow-sm border border-base-200">
+          <div className="card-body p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-base-content/80 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-primary" />
+                Live Canvas Preview
+              </h2>
+              <span className="text-[11px] text-base-content/50">
+                Click text to drag or resize
+              </span>
             </div>
 
-            <div className="mb-2 md:mb-4 flex justify-start" id="canvas-wrapper">
-              <canvas ref={canvasRef} />
+            <div
+              className="flex justify-center items-center w-full min-h-[350px] bg-base-200/50 rounded-lg p-2 overflow-hidden border border-base-300"
+              id="canvas-wrapper"
+            >
+              <StageCanvas className="shadow-lg rounded block" />
             </div>
           </div>
+        </div>
 
-          <div className="divider lg:divider-horizontal"></div>
-
-          {/* Text Editor */}
-          <TextPanel
-            textElements={textElements}
-            selectedElement={selectedElement}
-            setSelectedElement={setSelectedElement}
-            addText={addTextElement}
-            deleteSelectedElement={deleteSelectedElement}
-            textManager={textManager}
-            // resetToTemplate={resetToTemplate}
-            onResetTemplate={resetToTemplate}
-            onSave={downloadCanvas}
-            // image={!!image} // boolean check only
-          />
+        {/* Text Captions & Controls Panel */}
+        <div className="lg:col-span-1 card bg-base-100 shadow-sm border border-base-200">
+          <div className="card-body p-4 sm:p-5">
+            <TextPanel
+              textElements={textElements}
+              selectedElement={selectedElement}
+              setSelectedElement={setSelectedElement}
+              addText={addTextElement}
+              deleteSelectedElement={deleteSelectedElement}
+              textManager={textManager}
+              onResetTemplate={resetToTemplate}
+              onSave={downloadCanvas}
+              onCopy={copyCanvasToClipboard}
+            />
+          </div>
         </div>
       </div>
 
@@ -90,4 +126,3 @@ export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) =>
 };
 
 export default MemeGenerator;
-

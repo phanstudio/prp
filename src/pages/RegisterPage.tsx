@@ -3,13 +3,14 @@ import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../services/ToastProvider";
-import { Lock, Mail, User } from "lucide-react";
+import { Lock, Mail, User, Eye, EyeOff, UserPlus } from "lucide-react";
 
 export const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,36 +32,28 @@ export const RegisterPage: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // Pass username only if it's not empty
-      const usernameToPass = username.trim() !== "" ? username : undefined;
+      const usernameToPass = username.trim() !== "" ? username.trim() : undefined;
       const result = await register(email, password, usernameToPass);
 
       if (result.autoLoginFailed) {
-        // Registration succeeded but auto-login failed
-        // Redirect to login page
         navigate("/login", {
           state: {
-            from, // 👈 preserve where they were going
+            from,
             message: "Registration successful! Please log in with your credentials.",
           },
         });
       } else {
-        // Both registration and auto-login succeeded
         navigate(from, { replace: true });
       }
     } catch (err: any) {
       console.error("Registration error:", err);
 
-      // Format error message properly
       let errorMessage = "Registration failed. Please try again.";
-
       if (err.response?.data?.detail) {
-        // Handle different detail formats
         const detail = err.response.data.detail;
         if (typeof detail === "string") {
           errorMessage = detail;
         } else if (Array.isArray(detail)) {
-          // FastAPI validation errors format
           errorMessage = detail
             .map((e: any) => e.msg || JSON.stringify(e))
             .join(", ");
@@ -68,100 +61,144 @@ export const RegisterPage: React.FC = () => {
           errorMessage = JSON.stringify(detail);
         }
       }
-      addToast(errorMessage, 'error', 4000);
+      setError(errorMessage);
+      addToast(errorMessage, "error", 4000);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-24 p-6 border border-base-300 card bg-base-200">
-      <h2 className="text-2xl font-bold mb-4 text-center">Register</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="username" className="mb-1 font-medium">
-            Username <span className="text-base-content/50 text-sm">(optional)</span>
-          </label>
-          <label className="input validator w-full">
-            <User className="w-4 h-4"/>
-            <input
-              type="text" placeholder="killer1234 or Leave blank to auto-generate"
-              id="username" value={username} onChange={(e) => setUsername(e.target.value)}
-            />
-          </label>
+    <div className="min-h-[calc(100vh-140px)] flex items-center justify-center p-4">
+      <div className="max-w-md w-full p-6 sm:p-8 border border-base-300 card bg-base-100 shadow-xl rounded-2xl">
+        <div className="text-center mb-6">
+          <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mx-auto mb-3">
+            <UserPlus className="w-6 h-6" />
+          </div>
+          <h2 className="text-2xl font-bold">Create Account</h2>
+          <p className="text-xs text-base-content/60 mt-1">
+            Sign up to save templates and generate customized memes
+          </p>
         </div>
 
-        <div>
-          <label htmlFor="email" className="text-md font-meduim">Email</label>
-          <label className="input validator w-full">
-            <Mail className="w-4 h-4"/>
-            <input
-              type="email" required placeholder="mail@site.com"
-              id="email" value={email} onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
-          <div className="validator-hint hidden">Enter valid email address</div>
-        </div>
-
-        <div>
-          <label htmlFor="password" className="text-md font-meduim">Password</label>
-          <label className="input validator w-full">
-            <Lock className="w-4 h-4"/>
-            <input
-              type="password" required placeholder="0000000" minLength={6}
-              id="password" value={password} onChange={(e) => setPassword(e.target.value)}
-            />
-          </label>
-          <p className="validator-hint hidden">
-						Must be more than 6 characters
-            {/* , including */}
-						{/* <br/>At least one number
-						<br/>At least one lowercase letter
-						<br/>At least one uppercase letter */}
-					</p>
-        </div>
-
-        <div>
-          <label htmlFor="confirmPassword" className="text-md font-meduim">Confirm Password</label>
-          <label className={`input w-full ${error ? "input-error" : ""}`}>
-            <Lock className="w-4 h-4"/>
-            <input
-              id="confirmPassword" type="password" value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required placeholder="0000000"
-            />
-          </label>
-          {error && (
-					<>
-					<p className="text-sm text-error">
-						Password must match
-					</p>
-					</>
+        {error && (
+          <div className="alert alert-error text-xs mb-4 shadow-sm">
+            <span>{error}</span>
+          </div>
         )}
-        </div>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className={`w-full btn
-            ${
-              isLoading ? "opacity-60 cursor-not-allowed" : "hover:bg-accent"
-            }`}
-        >
-          {isLoading ? <span className="loading loading-dots loading-md text-primary"/>  : "Register"}
-        </button>
-      </form>
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <div>
+            <label htmlFor="username" className="label py-1">
+              <span className="label-text text-xs font-semibold">
+                Username <span className="text-base-content/50 font-normal">(optional)</span>
+              </span>
+            </label>
+            <div className="relative">
+              <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50" />
+              <input
+                type="text"
+                placeholder="Leave blank to auto-generate"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="input input-sm input-bordered w-full pl-9"
+              />
+            </div>
+          </div>
 
-      <div className="mt-4 text-center">
-        <p className="text-base-content/50">
+          <div>
+            <label htmlFor="email" className="label py-1">
+              <span className="label-text text-xs font-semibold">Email Address</span>
+            </label>
+            <div className="relative">
+              <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50" />
+              <input
+                type="email"
+                required
+                placeholder="name@example.com"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input input-sm input-bordered w-full pl-9"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="password" className="label py-1">
+              <span className="label-text text-xs font-semibold">Password</span>
+            </label>
+            <div className="relative">
+              <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50" />
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                placeholder="Min 6 characters"
+                minLength={6}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input input-sm input-bordered w-full pl-9 pr-9"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="confirmPassword" className="label py-1">
+              <span className="label-text text-xs font-semibold">Confirm Password</span>
+            </label>
+            <div className="relative">
+              <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/50" />
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                placeholder="Repeat password"
+                minLength={6}
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`input input-sm input-bordered w-full pl-9 pr-9 ${
+                  confirmPassword && password !== confirmPassword ? "input-error" : ""
+                }`}
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="btn btn-primary w-full btn-sm gap-2 mt-2 shadow-sm"
+          >
+            {isLoading ? (
+              <span className="loading loading-spinner loading-sm" />
+            ) : (
+              "Create Account"
+            )}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center text-xs text-base-content/70">
           Already have an account?{" "}
-          <Link 
-          state={{ from: (location.state as any)?.from || '/' }} // 👈 carry over destination
-          to={"/login"} className="text-accent link link-hover">
-            Sign In
+          <Link
+            state={{ from }}
+            to="/login"
+            className="text-primary font-semibold hover:underline"
+          >
+            Sign in
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );
 };
+
+export default RegisterPage;

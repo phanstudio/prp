@@ -4,6 +4,7 @@ import { MemeGenerator } from "../pages/memeGeneratorPage";
 import type { Template } from "../components/types";
 import { TemplateCreator } from "../pages/templateCreatorPage";
 import { TemplateGallery } from "../pages/templateGalleryPage";
+import { SettingsPage } from "../pages/SettingsPage";
 // import { useTemplates } from "../contexts/TemplateContext";
 import { useTemplateResolver } from "../hooks/useTemplateResolver";
 import { useImagePreloader } from "../hooks/useImagePreloader";
@@ -85,4 +86,9 @@ export const MemeEditorRoute: React.FC = () => {
   }
 
   return <TemplateCreator onBack={handleBack} templateToEdit={template} />;
+};
+
+// Settings Route
+export const SettingsRoute: React.FC = () => {
+  return <SettingsPage />;
 };

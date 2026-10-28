@@ -1,29 +1,33 @@
-// import { Shield } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Sparkles } from "lucide-react";
 
-const Footer = () => {
+export const Footer: React.FC = () => {
   return (
-    // Footer with Agency Branding
-    // <footer className="bg-black backdrop-blur-2xl border-t border-white/20">
-    //     <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
-    //         <div className="text-center">
-    //             <div className="flex items-center justify-center space-x-4 mb-6">
-    //                 <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center">
-    //                     <Shield className="w-4 h-4 text-white" />
-    //                 </div>
-    //                 <span className="text-white font-bold text-lg">CLASSIFIED INVESTIGATION UNIT</span>
-    //             </div>
-    //             <p className="text-white/60 font-mono text-sm">
-    //                 © 2025 • CASE STATUS: CLOSED • THREAT LEVEL: MINIMAL • LEGITIMACY: CONFIRMED
-    //             </p>
-    //         </div>
-    //     </div>
-    // </footer>
-    <footer className="mt-2 footer sm:footer-horizontal footer-center bg-base-300 text-base-content p-4">
-        <aside>
-        <p>Copyright © {new Date().getFullYear()} - All right reserved by ACME Industries Ltd</p>
-        </aside>
-  </footer>
+    <footer className="footer footer-center bg-base-100 text-base-content/70 border-t border-base-200 py-6 px-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between w-full max-w-7xl mx-auto gap-3 text-xs">
+        <div className="flex items-center gap-2 font-semibold text-base-content">
+          <div className="w-5 h-5 rounded bg-primary text-primary-content flex items-center justify-center">
+            <Sparkles className="w-3 h-3" />
+          </div>
+          <span>PostRugPhotos</span>
+          <span className="text-base-content/40 font-normal">
+            • Instant Meme Generator & Template Studio
+          </span>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <Link to="/" className="hover:text-primary transition-colors">
+            Templates
+          </Link>
+          <Link to="/settings" className="hover:text-primary transition-colors">
+            Settings
+          </Link>
+          <span>© {new Date().getFullYear()} All rights reserved.</span>
+        </div>
+      </div>
+    </footer>
   );
-}
+};
 
 export default Footer;

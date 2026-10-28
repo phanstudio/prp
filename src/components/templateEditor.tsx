@@ -1,22 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Edit3, Trash2Icon, Copy, Download } from "lucide-react";
-import type { TextProperties, TextManager } from "../hooks/usecase/text-manager";
+import { Plus, Edit3, Trash2Icon, Copy, Download, RotateCcw } from "lucide-react";
+import type { TextProperties } from "../hooks/usecase/use-konva";
 import FontSelector from "./main/FontSelector";
-import { useTemplateInfo } from "../hooks/useTemplateInfo"
+import { useTemplateInfo } from "../hooks/useTemplateInfo";
 import { TextEffectsPanel } from "./TextEffectsPanel";
 import { DefualtTextSettings } from "./types";
 
 interface TemplateEditorProps {
   templateInfo: ReturnType<typeof useTemplateInfo>;
-  textElements: any[]; // From fabric canvas
+  textElements: any[];
   selectedElement: string | null;
   setSelectedElement: (id: string | null) => void;
   addText: () => void;
-  textManager: TextManager;
+  textManager: any;
   deleteSelectedElement: () => void;
   saveTemplate: () => Promise<void>;
   image?: HTMLImageElement | null;
   resetToTemplate: () => void;
+  onResetAll?: () => void;
   toEdit: boolean;
 }
 
@@ -31,22 +32,23 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
   saveTemplate,
   image,
   resetToTemplate,
+  onResetAll,
   toEdit,
 }) => {
   const [currentTextProps, setCurrentTextProps] = useState<TextProperties | null>(null);
-  const [isSaving, setIsSaving] = useState(false); // <-- new state
+  const [isSaving, setIsSaving] = useState(false);
+  const [textValues, setTextValues] = useState<{ [id: string]: string }>({});
 
-  const handleSave = async () => {
-    if (!image || !templateName.trim()) return;
-    setIsSaving(true);
-    try {
-      await saveTemplate();
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const {
+    templateName,
+    setTemplateName,
+    templateDescription,
+    setTemplateDescription,
+    templateTags,
+    setTemplateTags,
+  } = templateInfo;
 
-  // Update current properties when selection changes
+  // Sync current properties when selected element changes
   useEffect(() => {
     if (selectedElement) {
       const props = textManager.getSelectedTextProperties();
@@ -58,203 +60,259 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
   const updateProperty = (updates: Partial<TextProperties>) => {
     if (!currentTextProps) return;
-    
     const newProps = { ...currentTextProps, ...updates };
     setCurrentTextProps(newProps);
     textManager.updateSelectedText(updates);
   };
 
-  const {
-    templateName,
-    setTemplateName,
-    templateDescription,
-    setTemplateDescription,
-    templateTags,
-    setTemplateTags,
-  } = templateInfo;
-  const [textValues, setTextValues] = useState<{ [id: string]: string }>({});
-  return (
-    <div className="space-y-6">
-      {/* Text Controls */}
-      <div className="card bg-base-100 shadow-sm">
-        <div className="card-body">
-          <h3 className="font-semibold mb-4">Text Elements</h3>
+  const handleSave = async () => {
+    if (!image || !templateName.trim() || isSaving) return;
+    setIsSaving(true);
+    try {
+      await saveTemplate();
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-          <button onClick={addText} className="btn btn-primary w-full mb-4">
-            <Plus className="w-4 h-4" />
-            Add Text Box
-          </button>
+  return (
+    <div className="space-y-4">
+      {/* Text Elements Panel */}
+      <div className="card bg-base-100 shadow-sm border border-base-200">
+        <div className="card-body p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="font-bold text-base">Text Elements</h3>
+              <p className="text-xs text-base-content/60">
+                {textElements.length} {textElements.length === 1 ? "box" : "boxes"} on canvas
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={addText}
+              className="btn btn-primary btn-sm gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              Add Text
+            </button>
+          </div>
 
           {/* Text Elements List */}
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+          <div className="space-y-3 max-h-[32rem] overflow-y-auto pr-1">
             {textElements.map((element, index) => {
               const isSelected = selectedElement === element.id;
-              
+
               return (
                 <div
                   key={element.id}
-                  className={`p-3 rounded border ${
+                  className={`rounded-lg border transition-all ${
                     isSelected
-                      ? "border-primary bg-primary/10"
-                      : "border-base-300"
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-base-300 hover:border-base-content/30"
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="font-medium">Text {index + 1}</span>
-                    <button
-                      onClick={() =>
-                        setSelectedElement(isSelected ? null : element.id)
-                      }
-                      className="btn btn-xs btn-ghost"
-                    >
-                      <Edit3 className="w-3 h-3" />
-                    </button>
+                  {/* Item Header */}
+                  <div
+                    className="p-3 flex items-center justify-between cursor-pointer select-none bg-base-200/40 rounded-t-lg"
+                    onClick={() => setSelectedElement(isSelected ? null : element.id)}
+                  >
+                    <div className="flex items-center gap-2 truncate mr-2">
+                      <span className="badge badge-sm badge-neutral font-mono font-bold">
+                        #{index + 1}
+                      </span>
+                      <span className="text-xs font-semibold truncate max-w-[140px] sm:max-w-[180px]">
+                        {element.text?.trim() ? element.text : "Empty Text Box"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      {isSelected && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={textManager?.duplicateSelectedText}
+                            className="btn btn-ghost btn-xs text-info hover:bg-info/20"
+                            title="Duplicate Text"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={deleteSelectedElement}
+                            className="btn btn-ghost btn-xs text-error hover:bg-error/20"
+                            title="Delete Text"
+                          >
+                            <Trash2Icon className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedElement(isSelected ? null : element.id)}
+                        className={`btn btn-xs ${isSelected ? "btn-primary" : "btn-ghost"}`}
+                        title={isSelected ? "Collapse" : "Edit"}
+                      >
+                        <Edit3 className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
 
-                  <textarea
-                    placeholder="Enter your meme text..."
-                    className="textarea textarea-sm textarea-bordered w-full mb-2 min-h-20"
-                    value={isSelected ? currentTextProps?.text || "" : element.text || ""}
-                    onChange={(e) => {
-                      setSelectedElement(element.id);
-                      setTextValues(prev => ({ ...prev, [element.id]: e.target.value }));
-                      updateProperty({ text: e.target.value, allCaps: currentTextProps?.allCaps === true });
-                    }}
-                    onFocus={() => setSelectedElement(element.id)}
-                  />
-
+                  {/* Expanded Properties Editor */}
                   {isSelected && currentTextProps && (
-                    <div className="space-y-3 pt-2 border-t border-base-300">
-                      {/* Font Settings */}
-                      <div className="grid grid-cols-2 gap-2">
+                    <div className="p-3 space-y-3.5 border-t border-base-200">
+                      {/* Text Input */}
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="label-text text-xs font-medium">Text Content</label>
+                          <span className="text-[10px] text-base-content/50">Supports line breaks</span>
+                        </div>
+                        <textarea
+                          placeholder="Type meme text here..."
+                          className="textarea textarea-sm textarea-bordered w-full min-h-20 text-sm focus:textarea-primary"
+                          value={currentTextProps?.text || ""}
+                          onChange={(e) => {
+                            setTextValues((prev) => ({ ...prev, [element.id]: e.target.value }));
+                            updateProperty({
+                              text: e.target.value,
+                              allCaps: currentTextProps?.allCaps === true,
+                            });
+                          }}
+                        />
+                      </div>
+
+                      {/* Font Size & Text Color */}
+                      <div className="grid grid-cols-2 gap-3 items-center">
                         <div>
-                          <label className="label-text text-xs">Max Font Size</label>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="label-text text-xs font-medium">Font Size</label>
+                            <span className="badge badge-xs badge-neutral">
+                              {currentTextProps.maxFontSize || DefualtTextSettings.fontSize}px
+                            </span>
+                          </div>
                           <input
                             type="range"
                             min="12"
                             max="100"
-                            className="range range-sm"
+                            step="1"
+                            className="range range-xs range-primary"
                             value={currentTextProps.maxFontSize || DefualtTextSettings.fontSize}
                             onChange={(e) =>
-                              updateProperty({ maxFontSize: parseInt(e.target.value) })
+                              updateProperty({ maxFontSize: parseInt(e.target.value) || 20 })
                             }
                           />
-                          <div className="text-xs text-center">
-                            {currentTextProps.maxFontSize}px
-                          </div>
                         </div>
+
                         <div>
-                          <label className="label-text text-xs">Text Color</label>
-                          <input
-                            type="color"
-                            className="input input-xs input-bordered w-full h-8"
-                            value={currentTextProps.fill || DefualtTextSettings.textColor}
-                            onChange={(e) =>
-                              updateProperty({ fill: e.target.value })
-                            }
-                          />
+                          <label className="label-text text-xs font-medium block mb-1">Text Color</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              className="input input-xs input-bordered w-10 h-8 p-1 cursor-pointer"
+                              value={currentTextProps.fill || DefualtTextSettings.textColor}
+                              onChange={(e) => updateProperty({ fill: e.target.value })}
+                            />
+                            <span className="text-xs font-mono text-base-content/70 uppercase">
+                              {currentTextProps.fill || DefualtTextSettings.textColor}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
+                      {/* Font Family Selector (With High z-index portal dropdown) */}
                       <FontSelector
                         value={currentTextProps.fontFamily || DefualtTextSettings.fontFamily}
                         onChange={(font) => updateProperty({ fontFamily: font })}
                       />
 
-                      {/* Text Style */}
-                      <div>
-                        <label className="label-text text-xs mb-1 block">Text Style</label>
-                        <div className="flex gap-2">
-                          <button
-                            className={`btn btn-xs ${currentTextProps.fontWeight === "bold" ? "btn-primary" : "btn-ghost"}`}
-                            onClick={() => 
-                              updateProperty({ fontWeight: currentTextProps.fontWeight === "bold" ? "normal" : "bold" })
-                            }
-                          >
-                            <strong>B</strong>
-                          </button>
-                          <button
-                            className={`btn btn-xs ${currentTextProps.fontStyle === "italic" ? "btn-primary" : "btn-ghost"}`}
-                            onClick={() => 
-                              updateProperty({ fontStyle: currentTextProps.fontStyle === "italic" ? "normal" : "italic" })
-                            }
-                          >
-                            <em>I</em>
-                          </button>
-                          <button
-                            className={`btn btn-xs ${currentTextProps.underline ? "btn-primary" : "btn-ghost"}`}
-                            onClick={() => 
-                              updateProperty({ underline: !currentTextProps.underline })
-                            }
-                          >
-                            <u>U</u>
-                          </button>
-                          <button
-                            className={`btn btn-xs ${
-                              (currentTextProps?.allCaps ?? (element.text == element.text.toUpperCase())
-                            ) ? "btn-primary" : "btn-ghost"}`}
-                            onClick={() =>
-                              updateProperty({ allCaps: !currentTextProps?.allCaps, text: textValues[element.id] ?? element.text })
-                            }
-                          >
-                            Aa
-                          </button>
-                          {/* TODO: Add linethrough support - uncomment when ready */}
-                          {/* <button
-                            className={`btn btn-xs ${currentTextProps.linethrough ? "btn-primary" : "btn-ghost"}`}
-                            onClick={() => 
-                              updateProperty({ linethrough: !currentTextProps.linethrough })
-                            }
-                          >
-                            <s>S</s>
-                          </button> */}
-                        </div>
-                      </div>
-
-                      {/* Text Alignment use select instead */}
-                      <div>
-                        <label className="label-text text-xs mb-1 block">Alignment</label>
-                        <div className="flex gap-2">
-                          {(["left", "center", "right"] as const).map((align) => (
+                      {/* Typography Style & Alignment in Responsive Columns */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        {/* Style buttons */}
+                        <div>
+                          <label className="label-text text-xs font-medium mb-1 block">Style</label>
+                          <div className="join w-full">
                             <button
-                              key={align}
-                              className={`btn btn-xs ${currentTextProps.textAlign === align ? "btn-primary" : "btn-ghost"}`}
-                              onClick={() => updateProperty({ textAlign: align })}
+                              type="button"
+                              className={`btn btn-xs join-item flex-1 ${
+                                currentTextProps.fontWeight === "bold" ? "btn-primary" : "btn-outline border-base-300"
+                              }`}
+                              onClick={() =>
+                                updateProperty({
+                                  fontWeight: currentTextProps.fontWeight === "bold" ? "normal" : "bold",
+                                })
+                              }
+                              title="Bold"
                             >
-                              {align[0].toUpperCase()}
+                              <strong>B</strong>
                             </button>
-                          ))}
-                          {/* TODO: Add justify support - uncomment when ready */}
-                          {/* <button
-                            className={`btn btn-xs ${currentTextProps.textAlign === "justify" ? "btn-primary" : "btn-ghost"}`}
-                            onClick={() => updateProperty({ textAlign: "justify" })}
-                          >
-                            J
-                          </button> */}
+                            <button
+                              type="button"
+                              className={`btn btn-xs join-item flex-1 ${
+                                currentTextProps.fontStyle === "italic" ? "btn-primary" : "btn-outline border-base-300"
+                              }`}
+                              onClick={() =>
+                                updateProperty({
+                                  fontStyle: currentTextProps.fontStyle === "italic" ? "normal" : "italic",
+                                })
+                              }
+                              title="Italic"
+                            >
+                              <em>I</em>
+                            </button>
+                            <button
+                              type="button"
+                              className={`btn btn-xs join-item flex-1 ${
+                                currentTextProps.underline ? "btn-primary" : "btn-outline border-base-300"
+                              }`}
+                              onClick={() =>
+                                updateProperty({ underline: !currentTextProps.underline })
+                              }
+                              title="Underline"
+                            >
+                              <u>U</u>
+                            </button>
+                            <button
+                              type="button"
+                              className={`btn btn-xs join-item flex-1 ${
+                                currentTextProps?.allCaps ? "btn-primary" : "btn-outline border-base-300"
+                              }`}
+                              onClick={() =>
+                                updateProperty({
+                                  allCaps: !currentTextProps?.allCaps,
+                                  text: textValues[element.id] ?? element.text,
+                                })
+                              }
+                              title="All Caps"
+                            >
+                              AA
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Alignment buttons */}
+                        <div>
+                          <label className="label-text text-xs font-medium mb-1 block">Align</label>
+                          <div className="join w-full">
+                            {(["left", "center", "right"] as const).map((align) => (
+                              <button
+                                key={align}
+                                type="button"
+                                className={`btn btn-xs join-item flex-1 capitalize ${
+                                  currentTextProps.textAlign === align ? "btn-primary" : "btn-outline border-base-300"
+                                }`}
+                                onClick={() => updateProperty({ textAlign: align })}
+                              >
+                                {align}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
 
-                      {/* Text Effects */}
+                      {/* Text Effects Panel */}
                       <TextEffectsPanel
                         currentTextProps={currentTextProps}
                         updateProperty={updateProperty}
                       />
-
-                      <div className="join w-full">
-                        <button
-                          onClick={textManager?.duplicateSelectedText}
-                          className="btn btn-info text-sm join-item"
-                        >
-                          <Copy size={16}/>
-                        </button>
-
-                        <button
-                          onClick={deleteSelectedElement}
-                          className="btn btn-error text-sm join-item"
-                        >
-                          <Trash2Icon size={16}/>
-                        </button>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -263,79 +321,96 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
           </div>
 
           {textElements.length === 0 && (
-            <div className="text-center text-base-content/60 py-8">
-              No text elements yet.
-              <br />
-              Add some text boxes to create your template.
+            <div className="text-center text-base-content/60 py-8 border-2 border-dashed border-base-300 rounded-lg">
+              <p className="text-sm font-medium">No text elements yet</p>
+              <p className="text-xs text-base-content/50 mt-1">
+                Click "Add Text" to start placing text on your template.
+              </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Template Info */}
-      <div className="card bg-base-100 shadow-sm">
-        <div className="card-body">
-          <h3 className="font-semibold mb-4">Template Information</h3>
+      {/* Template Info Card */}
+      <div className="card bg-base-100 shadow-sm border border-base-200">
+        <div className="card-body p-4 sm:p-5 space-y-3">
+          <h3 className="font-bold text-base">Template Details</h3>
 
-          <div className="space-y-4">
-            <div>
-              <label className="label">
-                <span className="label-text">Template Name *</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Enter template name"
-                className="input input-bordered w-full"
-                value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="label">
-                <span className="label-text">Description</span>
-              </label>
-              <textarea
-                placeholder="Template description (optional)"
-                className="textarea textarea-bordered w-full"
-                rows={3}
-                value={templateDescription}
-                onChange={(e) => setTemplateDescription(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="label">
-                <span className="label-text">Tags</span>
-              </label>
-              <input
-                type="text"
-                placeholder="funny, reaction, meme (comma separated)"
-                className="input input-bordered w-full"
-                value={templateTags}
-                onChange={(e) => setTemplateTags(e.target.value)}
-              />
-            </div>
+          <div>
+            <label className="label py-1">
+              <span className="label-text text-xs font-medium">Template Name *</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Drake Hotline Bling"
+              className="input input-sm input-bordered w-full"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+            />
           </div>
-          {toEdit && (
-            <button
-              onClick={resetToTemplate}
-              className="btn btn-base w-full mb-4"
-            >
-              Reset
-            </button>
-          )}
+
+          <div>
+            <label className="label py-1">
+              <span className="label-text text-xs font-medium">Description (optional)</span>
+            </label>
+            <textarea
+              placeholder="Brief description of the template..."
+              className="textarea textarea-sm textarea-bordered w-full"
+              rows={2}
+              value={templateDescription}
+              onChange={(e) => setTemplateDescription(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="label py-1">
+              <span className="label-text text-xs font-medium">Tags</span>
+            </label>
+            <input
+              type="text"
+              placeholder="funny, reaction, meme (comma separated)"
+              className="input input-sm input-bordered w-full"
+              value={templateTags}
+              onChange={(e) => setTemplateTags(e.target.value)}
+            />
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-2 pt-2">
+            {toEdit && (
+              <button
+                type="button"
+                onClick={resetToTemplate}
+                className="btn btn-outline btn-sm flex-1 gap-1"
+                title="Reset text elements back to original template"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reset Text
+              </button>
+            )}
+            {onResetAll && !toEdit && (
+              <button
+                type="button"
+                onClick={onResetAll}
+                className="btn btn-outline btn-warning btn-sm flex-1 gap-1"
+                title="Reset canvas, text, and image"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reset All
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Save Button */}
       <button
         onClick={handleSave}
-        className="btn btn-success w-full btn-lg"
+        className="btn btn-success w-full btn-md sm:btn-lg gap-2 text-white shadow-md hover:shadow-lg transition-all"
         disabled={!image || !templateName.trim() || isSaving}
       >
         <Download className="w-5 h-5" />
-        {isSaving ? "Saving..." : "Save Template"}
+        {isSaving ? "Saving..." : toEdit ? "Save Changes" : "Create Template"}
       </button>
     </div>
   );

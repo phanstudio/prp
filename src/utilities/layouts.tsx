@@ -24,18 +24,7 @@ export const RegularLayout: React.FC = () => {
         onLogout={handleLogout}
       />
       <div className="flex-1 pt-16">
-        {/* use a .env to change the banner info and toggle it or admin stuff */}
-        {/* <Banner
-          messages={[
-            "Welcome to the site — new features are live!",
-            "Maintenance tonight 00:00 - expect brief downtime.",
-            "Tip: Press / to focus search.",
-            "🎆🎆🍾🥂",
-          ]}
-          bgClass="bg-primary text-primary-content"
-          className="text-sm md:text-base"
-        /> */}
-        <main className="flex-1 p16">
+        <main className="flex-1 pb-12">
           <Outlet />
         </main>
       </div>
@@ -54,11 +43,12 @@ export const AdminLayout: React.FC = () => {
   };
 
   return (
-    <div>
-      <Navbar onLogout={handleLogout} username={user?.username ?? undefined}  />
-      <main>
+    <div className="min-h-screen bg-base-200 flex flex-col">
+      <Navbar onLogout={handleLogout} username={user?.username ?? undefined} />
+      <main className="flex-1 pb-12">
         <Outlet />
       </main>
+      <Footer />
     </div>
   );
 };
