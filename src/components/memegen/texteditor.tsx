@@ -3,6 +3,17 @@ import { DefualtTextSettings } from "../types";
 import FontSelector from "../main/FontSelector";
 import type { TextProperties } from "../../hooks/usecase/use-konva";
 import { TextEffectsPanel } from "../TextEffectsPanel";
+import {
+  Bold,
+  Italic,
+  Underline,
+  CaseUpper,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  ALargeSmall,
+  Palette,
+} from "lucide-react";
 
 interface TextEditorProps {
   element: TextProperties | null;
@@ -28,7 +39,10 @@ const TextEditor: React.FC<TextEditorProps> = ({
       <div className="grid grid-cols-2 gap-3 items-center">
         <div>
           <div className="flex justify-between items-center mb-1">
-            <label className="label-text text-[11px] font-medium">Font Size</label>
+            <label className="label-text text-[11px] font-medium flex items-center gap-1">
+              <ALargeSmall className="w-3.5 h-3.5 text-base-content/70" />
+              Font Size
+            </label>
             <span className="badge badge-xs badge-neutral">
               {activeProps.maxFontSize || DefualtTextSettings.fontSize}px
             </span>
@@ -45,7 +59,10 @@ const TextEditor: React.FC<TextEditorProps> = ({
         </div>
 
         <div>
-          <label className="label-text text-[11px] font-medium block mb-1">Color</label>
+          <label className="label-text text-[11px] font-medium mb-1 flex items-center gap-1">
+            <Palette className="w-3.5 h-3.5 text-base-content/70" />
+            Color
+          </label>
           <div className="flex items-center gap-2">
             <input
               type="color"
@@ -83,7 +100,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
               }
               title="Bold"
             >
-              <strong>B</strong>
+              <Bold className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
@@ -97,7 +114,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
               }
               title="Italic"
             >
-              <em>I</em>
+              <Italic className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
@@ -107,7 +124,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
               onClick={() => updateProperty({ underline: !activeProps.underline })}
               title="Underline"
             >
-              <u>U</u>
+              <Underline className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
@@ -122,7 +139,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
               }
               title="All Caps"
             >
-              AA
+              <CaseUpper className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -130,18 +147,36 @@ const TextEditor: React.FC<TextEditorProps> = ({
         <div>
           <label className="label-text text-[11px] font-medium mb-1 block">Alignment</label>
           <div className="join w-full">
-            {(["left", "center", "right"] as const).map((align) => (
-              <button
-                key={align}
-                type="button"
-                className={`btn btn-xs join-item flex-1 capitalize ${
-                  activeProps.textAlign === align ? "btn-primary" : "btn-outline border-base-300"
-                }`}
-                onClick={() => updateProperty({ textAlign: align })}
-              >
-                {align}
-              </button>
-            ))}
+            <button
+              type="button"
+              className={`btn btn-xs join-item flex-1 ${
+                activeProps.textAlign === "left" ? "btn-primary" : "btn-outline border-base-300"
+              }`}
+              onClick={() => updateProperty({ textAlign: "left" })}
+              title="Align Left"
+            >
+              <AlignLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              className={`btn btn-xs join-item flex-1 ${
+                activeProps.textAlign === "center" ? "btn-primary" : "btn-outline border-base-300"
+              }`}
+              onClick={() => updateProperty({ textAlign: "center" })}
+              title="Align Center"
+            >
+              <AlignCenter className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              className={`btn btn-xs join-item flex-1 ${
+                activeProps.textAlign === "right" ? "btn-primary" : "btn-outline border-base-300"
+              }`}
+              onClick={() => updateProperty({ textAlign: "right" })}
+              title="Align Right"
+            >
+              <AlignRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>

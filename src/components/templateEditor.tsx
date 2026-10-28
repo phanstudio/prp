@@ -1,5 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Edit3, Trash2Icon, Copy, Download, RotateCcw } from "lucide-react";
+import {
+  Plus,
+  Edit3,
+  Trash2Icon,
+  Copy,
+  Download,
+  RotateCcw,
+  Bold,
+  Italic,
+  Underline,
+  CaseUpper,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  ALargeSmall,
+  Palette,
+  Type,
+} from "lucide-react";
 import type { TextProperties } from "../hooks/usecase/use-konva";
 import FontSelector from "./main/FontSelector";
 import { useTemplateInfo } from "../hooks/useTemplateInfo";
@@ -117,7 +134,8 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     onClick={() => setSelectedElement(isSelected ? null : element.id)}
                   >
                     <div className="flex items-center gap-2 truncate mr-2">
-                      <span className="badge badge-sm badge-neutral font-mono font-bold">
+                      <span className="badge badge-sm badge-neutral font-mono font-bold flex items-center gap-1">
+                        <Type className="w-3 h-3 text-primary" />
                         #{index + 1}
                       </span>
                       <span className="text-xs font-semibold truncate max-w-[140px] sm:max-w-[180px]">
@@ -184,7 +202,10 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                       <div className="grid grid-cols-2 gap-3 items-center">
                         <div>
                           <div className="flex justify-between items-center mb-1">
-                            <label className="label-text text-xs font-medium">Font Size</label>
+                            <label className="label-text text-xs font-medium flex items-center gap-1">
+                              <ALargeSmall className="w-3.5 h-3.5 text-base-content/70" />
+                              Font Size
+                            </label>
                             <span className="badge badge-xs badge-neutral">
                               {currentTextProps.maxFontSize || DefualtTextSettings.fontSize}px
                             </span>
@@ -203,7 +224,10 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                         </div>
 
                         <div>
-                          <label className="label-text text-xs font-medium block mb-1">Text Color</label>
+                          <label className="label-text text-xs font-medium mb-1 flex items-center gap-1">
+                            <Palette className="w-3.5 h-3.5 text-base-content/70" />
+                            Text Color
+                          </label>
                           <div className="flex items-center gap-2">
                             <input
                               type="color"
@@ -242,7 +266,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                               }
                               title="Bold"
                             >
-                              <strong>B</strong>
+                              <Bold className="w-3.5 h-3.5" />
                             </button>
                             <button
                               type="button"
@@ -256,7 +280,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                               }
                               title="Italic"
                             >
-                              <em>I</em>
+                              <Italic className="w-3.5 h-3.5" />
                             </button>
                             <button
                               type="button"
@@ -268,7 +292,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                               }
                               title="Underline"
                             >
-                              <u>U</u>
+                              <Underline className="w-3.5 h-3.5" />
                             </button>
                             <button
                               type="button"
@@ -283,7 +307,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                               }
                               title="All Caps"
                             >
-                              AA
+                              <CaseUpper className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
@@ -292,18 +316,36 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                         <div>
                           <label className="label-text text-xs font-medium mb-1 block">Align</label>
                           <div className="join w-full">
-                            {(["left", "center", "right"] as const).map((align) => (
-                              <button
-                                key={align}
-                                type="button"
-                                className={`btn btn-xs join-item flex-1 capitalize ${
-                                  currentTextProps.textAlign === align ? "btn-primary" : "btn-outline border-base-300"
-                                }`}
-                                onClick={() => updateProperty({ textAlign: align })}
-                              >
-                                {align}
-                              </button>
-                            ))}
+                            <button
+                              type="button"
+                              className={`btn btn-xs join-item flex-1 ${
+                                currentTextProps.textAlign === "left" ? "btn-primary" : "btn-outline border-base-300"
+                              }`}
+                              onClick={() => updateProperty({ textAlign: "left" })}
+                              title="Align Left"
+                            >
+                              <AlignLeft className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              className={`btn btn-xs join-item flex-1 ${
+                                currentTextProps.textAlign === "center" ? "btn-primary" : "btn-outline border-base-300"
+                              }`}
+                              onClick={() => updateProperty({ textAlign: "center" })}
+                              title="Align Center"
+                            >
+                              <AlignCenter className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              className={`btn btn-xs join-item flex-1 ${
+                                currentTextProps.textAlign === "right" ? "btn-primary" : "btn-outline border-base-300"
+                              }`}
+                              onClick={() => updateProperty({ textAlign: "right" })}
+                              title="Align Right"
+                            >
+                              <AlignRight className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </div>
                       </div>

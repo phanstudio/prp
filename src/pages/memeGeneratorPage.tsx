@@ -26,7 +26,7 @@ export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) =>
     watermarkConfig: {
       text: "postrugphotos.xyz",
       mode: "download-only",
-      placement: "bottom-left",
+      position: "bottom-left",
     },
   });
 

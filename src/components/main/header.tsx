@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Home, Settings, ShieldCheck, LogOut, Menu, Sparkles } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -30,18 +30,18 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <li>
                 <NavLink to="/" end className={({ isActive }) => (isActive ? "active font-semibold" : "")}>
-                  <Home className="w-4 h-4" /> Home
+                  Home
                 </NavLink>
               </li>
               <li>
                 <NavLink to="/settings" className={({ isActive }) => (isActive ? "active font-semibold" : "")}>
-                  <Settings className="w-4 h-4" /> Settings
+                  Settings
                 </NavLink>
               </li>
               {isAdmin && (
                 <li>
                   <NavLink to="/admin" className={({ isActive }) => (isActive ? "active font-semibold text-accent" : "text-accent")}>
-                    <ShieldCheck className="w-4 h-4" /> Admin Studio
+                    Admin Studio
                   </NavLink>
                 </li>
               )}
@@ -65,10 +65,7 @@ export const Header: React.FC<HeaderProps> = ({
             </ul>
           </div>
 
-          <Link to="/" className="flex items-center gap-2 font-bold text-lg sm:text-xl tracking-tight">
-            <div className="w-8 h-8 rounded-lg bg-primary text-primary-content flex items-center justify-center shadow-xs">
-              <Sparkles className="w-4 h-4" />
-            </div>
+          <Link to="/" className="flex items-center gap-2 font-bold text-lg sm:text-xl tracking-tight hover:opacity-90 transition-opacity">
             <span>PostRugPhotos</span>
           </Link>
         </div>
@@ -81,12 +78,11 @@ export const Header: React.FC<HeaderProps> = ({
                 to="/"
                 end
                 className={({ isActive }) =>
-                  `rounded-lg px-3 py-1.5 transition-colors ${
+                  `rounded-lg px-3.5 py-1.5 transition-colors ${
                     isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
                   }`
                 }
               >
-                <Home className="w-4 h-4" />
                 Templates
               </NavLink>
             </li>
@@ -94,12 +90,11 @@ export const Header: React.FC<HeaderProps> = ({
               <NavLink
                 to="/settings"
                 className={({ isActive }) =>
-                  `rounded-lg px-3 py-1.5 transition-colors ${
+                  `rounded-lg px-3.5 py-1.5 transition-colors ${
                     isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
                   }`
                 }
               >
-                <Settings className="w-4 h-4" />
                 Settings
               </NavLink>
             </li>
@@ -108,12 +103,11 @@ export const Header: React.FC<HeaderProps> = ({
                 <NavLink
                   to="/admin"
                   className={({ isActive }) =>
-                    `rounded-lg px-3 py-1.5 transition-colors text-accent ${
+                    `rounded-lg px-3.5 py-1.5 transition-colors text-accent ${
                       isActive ? "bg-accent/10 font-bold" : "hover:bg-accent/10"
                     }`
                   }
                 >
-                  <ShieldCheck className="w-4 h-4" />
                   Admin Studio
                 </NavLink>
               </li>

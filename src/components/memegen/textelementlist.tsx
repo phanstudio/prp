@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import type { TextElement } from "../types";
 import TextEditor from "./texteditor";
-import { Sliders, Copy, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Sliders, Copy, Trash2, ChevronDown, ChevronUp, Type } from "lucide-react";
 import type { TextProperties } from "../../hooks/usecase/use-konva";
 
 interface TextElementListProps {
@@ -53,7 +53,8 @@ const TextElementList: React.FC<TextElementListProps> = ({
                 className="flex items-center gap-2 cursor-pointer flex-1 truncate select-none"
                 onClick={() => setSelectedElement(element.id)}
               >
-                <span className="badge badge-sm badge-neutral font-mono font-bold">
+                <span className="badge badge-sm badge-neutral font-mono font-bold flex items-center gap-1">
+                  <Type className="w-3 h-3 text-primary" />
                   #{index + 1}
                 </span>
                 <span className="text-xs font-medium truncate max-w-[140px] sm:max-w-[200px]">

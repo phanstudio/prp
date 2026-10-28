@@ -1,7 +1,7 @@
 // src/components/main/adminHeader.tsx
 import React from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Home, ShieldCheck, Plus, Settings, LogOut, Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 
 interface NavbarProps {
   username?: string;
@@ -25,22 +25,22 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
             >
               <li>
                 <NavLink to="/admin" end className={({ isActive }) => (isActive ? "active font-semibold" : "")}>
-                  <ShieldCheck className="w-4 h-4" /> Admin Collection
+                  Admin Collection
                 </NavLink>
               </li>
               <li>
                 <NavLink to="/admin/creator" className={({ isActive }) => (isActive ? "active font-semibold" : "")}>
-                  <Plus className="w-4 h-4" /> Create Template
+                  Create Template
                 </NavLink>
               </li>
               <li>
                 <NavLink to="/admin/settings" className={({ isActive }) => (isActive ? "active font-semibold" : "")}>
-                  <Settings className="w-4 h-4" /> Settings
+                  Settings
                 </NavLink>
               </li>
               <li>
                 <Link to="/" className="text-base-content/70">
-                  <Home className="w-4 h-4" /> Exit to Public Site
+                  Exit to Public Site
                 </Link>
               </li>
               <div className="divider my-1"></div>
@@ -52,11 +52,8 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
             </ul>
           </div>
 
-          <Link to="/admin" className="flex items-center gap-2 font-bold text-lg sm:text-xl tracking-tight">
-            <div className="w-8 h-8 rounded-lg bg-accent text-accent-content flex items-center justify-center shadow-xs">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <span>Admin Studio</span>
+          <Link to="/admin" className="flex items-center gap-2 font-bold text-lg sm:text-xl tracking-tight hover:opacity-90 transition-opacity">
+            <span className="text-accent font-extrabold">Admin Studio</span>
           </Link>
         </div>
 
@@ -68,12 +65,11 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
                 to="/admin"
                 end
                 className={({ isActive }) =>
-                  `rounded-lg px-3 py-1.5 transition-colors ${
+                  `rounded-lg px-3.5 py-1.5 transition-colors ${
                     isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
                   }`
                 }
               >
-                <ShieldCheck className="w-4 h-4" />
                 Collection
               </NavLink>
             </li>
@@ -81,12 +77,11 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
               <NavLink
                 to="/admin/creator"
                 className={({ isActive }) =>
-                  `rounded-lg px-3 py-1.5 transition-colors ${
+                  `rounded-lg px-3.5 py-1.5 transition-colors ${
                     isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
                   }`
                 }
               >
-                <Plus className="w-4 h-4" />
                 Create Template
               </NavLink>
             </li>
@@ -94,18 +89,16 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
               <NavLink
                 to="/admin/settings"
                 className={({ isActive }) =>
-                  `rounded-lg px-3 py-1.5 transition-colors ${
+                  `rounded-lg px-3.5 py-1.5 transition-colors ${
                     isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
                   }`
                 }
               >
-                <Settings className="w-4 h-4" />
                 Settings
               </NavLink>
             </li>
             <li>
-              <Link to="/" className="rounded-lg px-3 py-1.5 text-base-content/60 hover:bg-base-200/40">
-                <Home className="w-4 h-4" />
+              <Link to="/" className="rounded-lg px-3.5 py-1.5 text-base-content/70 hover:bg-base-200/40 transition-colors">
                 Public Home
               </Link>
             </li>
