@@ -13,6 +13,8 @@ export interface WatermarkConfig {
   opacity?: number;
 }
 
+let defaultTextWidth = 2000
+
 export interface UseKonvaOptions {
   watermarkConfig?: WatermarkConfig;
 }
@@ -137,7 +139,7 @@ export function useKonva(options?: UseKonvaOptions) {
       color: DefaultSettings.textColor,
       fontFamily: DefaultSettings.fontFamily,
       rotation: 0,
-      width: Math.round(baseSize.width * 0.8),
+      width: Math.min(defaultTextWidth, Math.round(baseSize.width * 0.8)),
       height: 60,
       textAlign: "center",
       outlineColor: DefaultSettings.outlineStrokeColor,
