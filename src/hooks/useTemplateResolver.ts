@@ -12,18 +12,19 @@ export function useTemplateResolver(templateId?: string, fallbackPath: string = 
 
   useEffect(() => {
     if (!templateId) return;
-    const id = Number(templateId);
+    const idStr = String(templateId);
 
-    // 1. check local context
-    const found = templates.find((t) => t.id === id);
+    // 1. Check local context
+    const found = templates.find((t) => String(t.id) === idStr);
     if (found) {
       setTemplate(found);
       return;
     }
 
-    // 2. fallback: fetch from backend if no templates in context
-    if (templates.length === 0) {
-      TemplateService.getTemplateById(id)
+    // 2. Fetch from backend if not found in current context
+    const numId = Number(templateId);
+    if (!isNaN(numId)) {
+      TemplateService.getTemplateById(numId)
         .then((data) => {
           if (data) {
             setTemplate(data);
@@ -36,7 +37,7 @@ export function useTemplateResolver(templateId?: string, fallbackPath: string = 
     } else {
       navigate(fallbackPath, { replace: true });
     }
-  }, [templateId, templates, navigate, fallbackPath]);
+  }, [templateId, templates, navigate, fallbackPath, appendTemplate]);
 
   return template;
 }

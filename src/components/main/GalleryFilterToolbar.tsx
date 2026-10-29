@@ -1,6 +1,6 @@
 // src/components/main/GalleryFilterToolbar.tsx
 import React from "react";
-import { Search, X, SlidersHorizontal, Flame, Clock, Sparkles } from "lucide-react";
+import { Search, X, SlidersHorizontal, Flame, Clock, Sparkles, Heart } from "lucide-react";
 
 export interface GalleryFilterToolbarProps {
   searchTerm: string;
@@ -15,6 +15,9 @@ export interface GalleryFilterToolbarProps {
   isSearching?: boolean;
   totalCount?: number;
   customActions?: React.ReactNode;
+  isFavoritesOnly?: boolean;
+  onToggleFavorites?: () => void;
+  favoritesCount?: number;
 }
 
 export const GalleryFilterToolbar: React.FC<GalleryFilterToolbarProps> = ({
@@ -30,6 +33,9 @@ export const GalleryFilterToolbar: React.FC<GalleryFilterToolbarProps> = ({
   isSearching = false,
   totalCount,
   customActions,
+  isFavoritesOnly = false,
+  onToggleFavorites,
+  favoritesCount = 0,
 }) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -37,7 +43,7 @@ export const GalleryFilterToolbar: React.FC<GalleryFilterToolbarProps> = ({
     }
   };
 
-  const hasActiveFilters = Boolean(searchTerm.trim() || selectedTag);
+  const hasActiveFilters = Boolean(searchTerm.trim() || selectedTag || isFavoritesOnly);
 
   return (
     <div className="space-y-3 mb-6">
@@ -112,7 +118,7 @@ export const GalleryFilterToolbar: React.FC<GalleryFilterToolbarProps> = ({
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <Flame className="w-4 h-4 text-warning" />
+                    <Flame className="w-4 h-4 text-error" />
                     Most Popular
                   </span>
                   {sortBy === "popular" && <span className="badge badge-xs badge-primary">Active</span>}
@@ -127,7 +133,7 @@ export const GalleryFilterToolbar: React.FC<GalleryFilterToolbarProps> = ({
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-info" />
+                    <Clock className="w-4 h-4 text-primary" />
                     Newest First
                   </span>
                   {sortBy === "newest" && <span className="badge badge-xs badge-primary">Active</span>}
@@ -163,19 +169,52 @@ export const GalleryFilterToolbar: React.FC<GalleryFilterToolbarProps> = ({
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
         <button
           type="button"
-          onClick={() => onSelectTag("")}
+          onClick={() => {
+            if (isFavoritesOnly && onToggleFavorites) {
+              onToggleFavorites();
+            }
+            onSelectTag("");
+          }}
           className={`btn btn-xs rounded-full px-3 text-xs font-medium transition-all ${
-            !selectedTag
+            !selectedTag && !isFavoritesOnly
               ? "btn-primary text-primary-content shadow-xs"
-              : "btn-ghost bg-base-100 border border-base-200/80 hover:bg-base-200"
+              : "btn-ghost bg-base-100 border border-base-200/80 hover:bg-base-200 text-base-content/80"
           }`}
         >
           <Sparkles className="w-3 h-3" />
           All Templates
-          {typeof totalCount === "number" && (
+          {typeof totalCount === "number" && !isFavoritesOnly && (
             <span className="opacity-75 font-mono text-[10px]">({totalCount})</span>
           )}
         </button>
+
+        {/* Favorites Quick Pill */}
+        {onToggleFavorites && (
+          <button
+            type="button"
+            onClick={onToggleFavorites}
+            className={`btn btn-xs rounded-full px-3 text-xs font-medium transition-all gap-1.5 ${
+              isFavoritesOnly
+                ? "bg-error text-white font-bold shadow-xs hover:bg-error/90"
+                : "btn-ghost bg-base-100 border border-base-200/80 hover:bg-base-200 text-base-content/80"
+            }`}
+          >
+            <Heart
+              fill={isFavoritesOnly ? "currentColor" : "none"}
+              className={`w-3 h-3 ${isFavoritesOnly ? "text-white" : "text-error"}`}
+            />
+            Favorites
+            {favoritesCount > 0 && (
+              <span
+                className={`font-mono text-[10px] ${
+                  isFavoritesOnly ? "text-white opacity-90" : "text-error font-semibold"
+                }`}
+              >
+                ({favoritesCount})
+              </span>
+            )}
+          </button>
+        )}
 
         {availableTags.map((tag) => {
           const isSelected = selectedTag === tag;

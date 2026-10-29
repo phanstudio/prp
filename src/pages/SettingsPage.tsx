@@ -1,7 +1,19 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock, Trash2, CheckCircle2, RotateCcw, Sliders, Palette } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock,
+  Trash2,
+  CheckCircle2,
+  RotateCcw,
+  Sliders,
+  Palette,
+  Sun,
+  Moon,
+  Sparkles,
+} from "lucide-react";
 import { useToast } from "../services/ToastProvider";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   getPostCreatePreferenceDetails,
   setPostCreatePreference,
@@ -14,6 +26,7 @@ import {
 export const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const { setTheme, isDark } = useTheme();
 
   const [prefDetails, setPrefDetails] = useState(() => getPostCreatePreferenceDetails());
   const [keepImage, setKeepImage] = useState(() => getKeepImagePreference());
@@ -30,7 +43,9 @@ export const SettingsPage: React.FC = () => {
       const details = getPostCreatePreferenceDetails();
       setPrefDetails(details);
       addToast(
-        `Preference saved: ${action === "gallery" ? "Always go to Gallery" : "Always stay & create another"} (valid for 7 days)`,
+        `Preference saved: ${
+          action === "gallery" ? "Always go to Gallery" : "Always stay & create another"
+        } (valid for 7 days)`,
         "success",
         2500
       );
@@ -49,12 +64,18 @@ export const SettingsPage: React.FC = () => {
     );
   };
 
+  const handleThemeChange = (newTheme: "darknew" | "light") => {
+    setTheme(newTheme);
+    addToast(`Theme switched to ${newTheme === "light" ? "Light" : "Dark"} mode`, "success", 2000);
+  };
+
   const handleResetAllPreferences = () => {
     clearPostCreatePreference();
     setKeepImagePreference(false);
     setPrefDetails(null);
     setKeepImage(false);
-    addToast("All editor preferences have been reset to defaults", "info", 2500);
+    setTheme("darknew");
+    addToast("All editor and appearance preferences have been reset to defaults", "info", 2500);
   };
 
   return (
@@ -64,25 +85,25 @@ export const SettingsPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="btn btn-sm btn-ghost gap-1.5 border border-base-300"
+            className="btn btn-sm btn-ghost gap-1.5 border border-base-300 btn-press"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 text-base-content/70" />
             Back
           </button>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2">
               <Sliders className="w-6 h-6 text-primary" />
               Editor Preferences & Settings
             </h1>
             <p className="text-xs text-base-content/60 mt-0.5">
-              Customize post-creation workflow and canvas behaviors
+              Customize appearance, post-creation workflow, and canvas behaviors
             </p>
           </div>
         </div>
 
         <button
           onClick={handleResetAllPreferences}
-          className="btn btn-xs sm:btn-sm btn-outline btn-error gap-1"
+          className="btn btn-xs sm:btn-sm btn-outline btn-error gap-1 btn-press"
           title="Reset all settings to factory default"
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -91,13 +112,88 @@ export const SettingsPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
+        {/* Appearance & Theme Section */}
+        <div className="card bg-base-100 shadow-sm border border-base-200">
+          <div className="card-body p-5 sm:p-6 space-y-4">
+            <div>
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                Appearance & Theme
+              </h2>
+              <p className="text-xs text-base-content/70 mt-1">
+                Select your preferred color theme. Uses official daisyUI semantic color palettes.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Dark Mode Option */}
+              <label
+                className={`p-4 rounded-xl border cursor-pointer flex items-center justify-between transition-all btn-press ${
+                  isDark
+                    ? "border-primary bg-primary/10 shadow-xs ring-1 ring-primary"
+                    : "border-base-300 hover:border-base-content/30 bg-base-200/40"
+                }`}
+                onClick={() => handleThemeChange("darknew")}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-base-300 flex items-center justify-center text-primary">
+                    <Moon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">Dark Theme (Default)</div>
+                    <div className="text-[11px] text-base-content/60">
+                      High-contrast deep background with neon teal accents
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="radio"
+                  name="theme_mode"
+                  className="radio radio-primary radio-sm"
+                  checked={isDark}
+                  onChange={() => handleThemeChange("darknew")}
+                />
+              </label>
+
+              {/* Light Mode Option */}
+              <label
+                className={`p-4 rounded-xl border cursor-pointer flex items-center justify-between transition-all btn-press ${
+                  !isDark
+                    ? "border-primary bg-primary/10 shadow-xs ring-1 ring-primary"
+                    : "border-base-300 hover:border-base-content/30 bg-base-200/40"
+                }`}
+                onClick={() => handleThemeChange("light")}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-base-300 flex items-center justify-center text-warning">
+                    <Sun className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">Light Theme</div>
+                    <div className="text-[11px] text-base-content/60">
+                      Clean crisp paper surface with vibrant teal contrast
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="radio"
+                  name="theme_mode"
+                  className="radio radio-primary radio-sm"
+                  checked={!isDark}
+                  onChange={() => handleThemeChange("light")}
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+
         {/* Post-Creation Workflow Section */}
         <div className="card bg-base-100 shadow-sm border border-base-200">
           <div className="card-body p-5 sm:p-6 space-y-4">
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-lg font-bold flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-secondary" />
+                  <Clock className="w-5 h-5 text-primary" />
                   Post-Save Workflow Action
                 </h2>
                 <p className="text-xs text-base-content/70 mt-1">
@@ -155,9 +251,9 @@ export const SettingsPage: React.FC = () => {
                   onChange={() => handleActionChange("gallery")}
                 />
                 <div className="flex-1">
-                  <div className="font-semibold text-sm">Always Return to Gallery</div>
+                  <div className="font-semibold text-sm">Always Go to Gallery</div>
                   <div className="text-xs text-base-content/60 mt-0.5">
-                    Immediately navigates back to the template gallery upon saving without showing an extra modal prompt.
+                    Immediately navigates back to the template collection gallery upon successfully saving.
                   </div>
                 </div>
               </label>
@@ -190,7 +286,7 @@ export const SettingsPage: React.FC = () => {
               <div className="pt-2 flex justify-end">
                 <button
                   onClick={() => handleActionChange("ask")}
-                  className="btn btn-xs btn-outline btn-error gap-1"
+                  className="btn btn-xs btn-outline btn-error gap-1 btn-press"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Clear 7-Day Saved Preference

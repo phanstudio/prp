@@ -12,30 +12,54 @@ export default class TemplateService {
       const response = await this.axios.get<Template[]>('/templates', {
         params: { search, skip, limit, tag, sort }
       });
-      const data = humps.camelizeKeys(response.data);
-      return data.map((t: any) => ({
-        ...t,
-        createdAt: new Date(t.createdAt),
-        textElements: (t.textElements || []).map((el: any) => ({
-          ...el,
-          // maxFontSize: el.fontSize,
-        })),
-      }));
+      const data: any = humps.camelizeKeys(response.data);
+      const list = Array.isArray(data) ? data : [];
+      return list.map((t: any) => {
+        let rawElements = t.textElements ?? t.text_elements ?? [];
+        if (typeof rawElements === "string") {
+          try {
+            rawElements = JSON.parse(rawElements);
+          } catch {
+            rawElements = [];
+          }
+        }
+        const tags = t.tags || (t.tag ? t.tag.split(",").map((s: string) => s.trim()).filter(Boolean) : []);
+        return {
+          ...t,
+          tags,
+          createdAt: new Date(t.createdAt || t.created_at || Date.now()),
+          textElements: (Array.isArray(rawElements) ? rawElements : []).map((el: any) => ({
+            ...el,
+          })),
+        };
+      });
     } catch (error) {
       console.error('Failed to fetch templates:', error);
       throw error;
     }
   }
+
   // Fetch single template by ID
   static async getTemplateById(id: number): Promise<Template | null> {
     try {
       const response = await this.axios.get<Template>(`/templates/${id}`);
       const data: any = humps.camelizeKeys(response.data);
 
+      let rawElements = data.textElements ?? data.text_elements ?? [];
+      if (typeof rawElements === "string") {
+        try {
+          rawElements = JSON.parse(rawElements);
+        } catch {
+          rawElements = [];
+        }
+      }
+      const tags = data.tags || (data.tag ? data.tag.split(",").map((s: string) => s.trim()).filter(Boolean) : []);
+
       return {
         ...data,
-        createdAt: new Date(data.createdAt),
-        textElements: (data.textElements || []).map((el: any) => ({
+        tags,
+        createdAt: new Date(data.createdAt || data.created_at || Date.now()),
+        textElements: (Array.isArray(rawElements) ? rawElements : []).map((el: any) => ({
           ...el,
         })),
       };

@@ -167,9 +167,18 @@ export function useKonva(options?: UseKonvaOptions) {
   }, []);
 
   // Load template
-  const loadTemplate = useCallback((template: { textElements: any[] }) => {
+  const loadTemplate = useCallback((template: { textElements?: any[]; text_elements?: any }) => {
     setSelectedElement(null);
-    const loaded = (template.textElements || []).map((el: any) => {
+    let rawElements: any = template?.textElements ?? (template as any)?.text_elements ?? [];
+    if (typeof rawElements === "string") {
+      try {
+        rawElements = JSON.parse(rawElements);
+      } catch {
+        rawElements = [];
+      }
+    }
+    const elementsArray = Array.isArray(rawElements) ? rawElements : [];
+    const loaded = elementsArray.map((el: any) => {
       const family = el.fontFamily ?? el.font_family ?? DefaultSettings.fontFamily;
       // Preload font immediately for this template element
       if (family) {

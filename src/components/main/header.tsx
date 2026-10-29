@@ -1,6 +1,7 @@
 import React from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { LogOut, Menu } from "lucide-react";
+import ThemeToggle from "./ThemeToggle";
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -15,6 +16,8 @@ export const Header: React.FC<HeaderProps> = ({
   username,
   onLogout,
 }) => {
+  const location = useLocation();
+  const isFavorites = location.pathname === "/" && location.search.includes("favorites=true");
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-base-100/85 backdrop-blur-md border-b border-base-200/80 shadow-xs">
       <nav className="navbar max-w-7xl mx-auto px-4 sm:px-6">
@@ -29,8 +32,13 @@ export const Header: React.FC<HeaderProps> = ({
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-56 p-2 shadow-xl border border-base-200"
             >
               <li>
-                <NavLink to="/" end className={({ isActive }) => (isActive ? "active font-semibold" : "")}>
+                <NavLink to="/" end className={({ isActive }) => (isActive && !isFavorites ? "active font-semibold" : "")}>
                   Home
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/?favorites=true" className={isFavorites ? "active font-semibold text-error" : ""}>
+                  Favorites
                 </NavLink>
               </li>
               <li>
@@ -41,10 +49,14 @@ export const Header: React.FC<HeaderProps> = ({
               {isAdmin && (
                 <li>
                   <NavLink to="/admin" className={({ isActive }) => (isActive ? "active font-semibold text-accent" : "text-accent")}>
-                    Admin Studio
+                    Studio
                   </NavLink>
                 </li>
               )}
+              <div className="divider my-1"></div>
+              <li className="px-2 py-1">
+                <ThemeToggle showLabel />
+              </li>
               <div className="divider my-1"></div>
               {isAuthenticated ? (
                 <li>
@@ -78,8 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
                 to="/"
                 end
                 className={({ isActive }) =>
-                  `rounded-lg px-3.5 py-1.5 transition-colors ${
-                    isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
+                  `rounded-lg px-3.5 py-1.5 transition-colors ${isActive && !isFavorites ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
                   }`
                 }
               >
@@ -88,10 +99,20 @@ export const Header: React.FC<HeaderProps> = ({
             </li>
             <li>
               <NavLink
+                to="/?favorites=true"
+                className={() =>
+                  `rounded-lg px-3.5 py-1.5 transition-colors ${isFavorites ? "bg-error/10 text-error font-semibold" : "hover:bg-base-200/60"
+                  }`
+                }
+              >
+                Favorites
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
                 to="/settings"
                 className={({ isActive }) =>
-                  `rounded-lg px-3.5 py-1.5 transition-colors ${
-                    isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
+                  `rounded-lg px-3.5 py-1.5 transition-colors ${isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
                   }`
                 }
               >
@@ -103,43 +124,48 @@ export const Header: React.FC<HeaderProps> = ({
                 <NavLink
                   to="/admin"
                   className={({ isActive }) =>
-                    `rounded-lg px-3.5 py-1.5 transition-colors text-accent ${
-                      isActive ? "bg-accent/10 font-bold" : "hover:bg-accent/10"
+                    `rounded-lg px-3.5 py-1.5 transition-colors text-accent ${isActive ? "bg-accent/10 font-bold" : "hover:bg-accent/10"
                     }`
                   }
                 >
-                  Admin Studio
+                  Studio
                 </NavLink>
               </li>
             )}
           </ul>
         </div>
 
-        {/* Right side authentication */}
-        <div className="navbar-end hidden lg:flex items-center gap-3">
-          {isAuthenticated ? (
-            <div className="flex items-center gap-2">
-              <div className="badge badge-neutral badge-sm py-2 px-3">
-                {username || "User"}
+        {/* Right side authentication & Theme switcher */}
+        <div className="navbar-end flex items-center gap-2">
+          {/* Light/Dark Mode Switcher */}
+          <ThemeToggle />
+
+          {/* Desktop Auth Section */}
+          <div className="hidden lg:flex items-center gap-2">
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <div className="badge badge-neutral badge-sm py-2 px-3">
+                  {username || "User"}
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="btn btn-sm btn-ghost btn-square text-base-content/70 hover:text-error btn-press"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                onClick={onLogout}
-                className="btn btn-sm btn-ghost btn-square text-base-content/70 hover:text-error"
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link to="/login" className="btn btn-sm btn-ghost">
-                Login
-              </Link>
-              <Link to="/register" className="btn btn-sm btn-primary shadow-xs">
-                Get Started
-              </Link>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link to="/login" className="btn btn-sm btn-ghost btn-press">
+                  Login
+                </Link>
+                <Link to="/register" className="btn btn-sm btn-primary shadow-xs btn-press text-primary-content">
+                  Get Started
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
     </header>

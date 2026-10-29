@@ -104,5 +104,7 @@ export function useTemplateLikes() {
     isLiked,
     getLikesCount,
     toggleLike,
+    favoritesCount: likedIds.size,
+    likedIds,
   };
 }

@@ -1,7 +1,7 @@
 // src/pages/templateGalleryPage.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Plus, Trash2, Edit2, SearchX, Sparkles, Type, Heart, ArrowRight } from "lucide-react";
+import { Plus, Trash2, Edit2, SearchX, Sparkles, Type, Heart } from "lucide-react";
 import type { Template } from "../components/types";
 import TemplateService from "../services/templateService";
 import { useTemplates } from "../contexts/TemplateContext";
@@ -29,9 +29,10 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   const [searchTerm, setSearchTerm] = useState(urlSearchTerm);
   const [selectedTag, setSelectedTag] = useState<string>("");
   const [sortBy, setSortBy] = useState<"newest" | "popular">("newest");
+  const isFavoritesOnly = searchParams.get("favorites") === "true";
 
   const { templates, appendTemplatesPaginated, clearTemplates } = useTemplates();
-  const { isLiked, getLikesCount, toggleLike } = useTemplateLikes();
+  const { isLiked, getLikesCount, toggleLike, favoritesCount } = useTemplateLikes();
 
   // pagination state
   const [page, setPage] = useState(1);
@@ -40,7 +41,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   const { addToast, removeToast } = useToast();
 
   // loading states
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(() => templates.length === 0);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -138,14 +139,20 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
     if (hasInitializedRef.current) return;
     hasInitializedRef.current = true;
     const initialLoad = async () => {
-      if (templates.length === 0) {
-        setIsInitialLoading(true);
+      try {
+        if (templates.length === 0) {
+          setIsInitialLoading(true);
+        } else {
+          const loader = addToast("Refreshing templates...", "loading", 0);
+          await fetchTemplates(1, urlSearchTerm);
+          removeToast(loader, true);
+          return;
+        }
         await fetchTemplates(1, urlSearchTerm);
+      } catch (err) {
+        console.error("Initial load error:", err);
+      } finally {
         setIsInitialLoading(false);
-      } else {
-        const loader = addToast("Refreshing templates...", "loading", 0);
-        await fetchTemplates(1, urlSearchTerm);
-        removeToast(loader, true);
       }
     };
     initialLoad();
@@ -166,13 +173,35 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   };
 
   const ensureTemplateId = (template: Partial<Template>): Template => {
+    let rawElements: any = (template as any).textElements ?? (template as any).text_elements ?? [];
+    if (typeof rawElements === "string") {
+      try {
+        rawElements = JSON.parse(rawElements);
+      } catch {
+        rawElements = [];
+      }
+    }
+    const tags = template.tags || ((template as any).tag ? (template as any).tag.split(",").map((s: string) => s.trim()).filter(Boolean) : []);
+
     return {
       ...template,
       id:
         template.id ??
         (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`),
-      textElements: template.textElements ?? [],
+      name: template.name || "Untitled Template",
+      tags,
+      textElements: Array.isArray(rawElements) ? rawElements : [],
     } as Template;
+  };
+
+  const handleToggleFavorites = () => {
+    const newParams = new URLSearchParams(searchParams);
+    if (isFavoritesOnly) {
+      newParams.delete("favorites");
+    } else {
+      newParams.set("favorites", "true");
+    }
+    setSearchParams(newParams);
   };
 
   // Filter & sort templates
@@ -180,10 +209,12 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
     const list = templates
       .map((t) => ensureTemplateId(t))
       .filter((template) => {
-        const matchesSearch =
-          template.name.toLowerCase().includes(urlSearchTerm.toLowerCase()) ||
-          (template.description &&
-            template.description.toLowerCase().includes(urlSearchTerm.toLowerCase()));
+        if (isFavoritesOnly && !isLiked(template.id)) {
+          return false;
+        }
+        const nameMatch = (template.name || "").toLowerCase().includes(urlSearchTerm.toLowerCase());
+        const descMatch = template.description && template.description.toLowerCase().includes(urlSearchTerm.toLowerCase());
+        const matchesSearch = nameMatch || descMatch;
         const matchesTag =
           !selectedTag || (template.tags && template.tags.includes(selectedTag));
 
@@ -195,7 +226,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
     }
 
     return list;
-  }, [templates, urlSearchTerm, selectedTag, sortBy, getLikesCount]);
+  }, [templates, urlSearchTerm, selectedTag, sortBy, getLikesCount, isFavoritesOnly, isLiked]);
 
   const allTags = useMemo(() => {
     return [...new Set(templates.flatMap((t) => t.tags || []))].sort();
@@ -205,7 +236,9 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
     e.stopPropagation();
     const liked = toggleLike(templateId);
     if (liked) {
-      addToast("Added to your favorites!", "success", 1800);
+      addToast("Saved to Favorites", "success", 1800);
+    } else {
+      addToast("Removed from Favorites", "info", 1800);
     }
   };
 
@@ -280,6 +313,9 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
         onSortChange={handleSortChange}
         isSearching={isSearching}
         totalCount={filteredTemplates.length}
+        isFavoritesOnly={isFavoritesOnly}
+        onToggleFavorites={handleToggleFavorites}
+        favoritesCount={favoritesCount}
       />
 
       {/* Search error alert */}
@@ -304,7 +340,23 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
       ) : filteredTemplates.length === 0 ? (
         <div className="card bg-base-100 shadow-sm border border-base-200 text-center py-16 px-4 max-w-lg mx-auto my-8 rounded-2xl">
           <div className="flex flex-col items-center">
-            {urlSearchTerm || selectedTag ? (
+            {isFavoritesOnly ? (
+              <>
+                <div className="p-4 bg-error/10 text-error rounded-full mb-3">
+                  <Heart className="w-8 h-8 text-error" />
+                </div>
+                <h3 className="text-base font-bold mb-1">No favorite templates yet</h3>
+                <p className="text-xs text-base-content/70 mb-4 max-w-xs">
+                  Click the heart icon on any template card to save it here for quick access.
+                </p>
+                <button
+                  onClick={handleToggleFavorites}
+                  className="btn btn-outline btn-sm rounded-xl"
+                >
+                  Explore All Templates
+                </button>
+              </>
+            ) : urlSearchTerm || selectedTag ? (
               <>
                 <div className="p-4 bg-base-200 rounded-full mb-3">
                   <SearchX className="w-8 h-8 text-base-content/60" />
@@ -459,24 +511,30 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                         <button
                           type="button"
                           onClick={(e) => handleLike(template.id, e)}
-                          className="flex items-center gap-1 text-xs text-base-content/70 hover:text-error transition-colors px-1.5 py-0.5 rounded-md hover:bg-error/10 btn-press"
+                          className={`flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-md transition-all btn-press ${
+                            liked
+                              ? "bg-error/15 text-error font-bold"
+                              : "bg-base-200/60 text-base-content/70 hover:bg-error/10 hover:text-error"
+                          }`}
                           title={liked ? "Unlike template" : "Like template"}
                         >
                           <Heart
+                            fill={liked ? "currentColor" : "none"}
                             className={`w-3.5 h-3.5 transition-transform duration-200 ${
                               liked
-                                ? "fill-error text-error scale-110 heart-pop"
+                                ? "text-error scale-110 heart-pop"
                                 : "text-base-content/50 hover:text-error"
                             }`}
                           />
-                          <span className="font-mono text-xs">{likes}</span>
+                          <span className={`font-mono text-xs ${liked ? "text-error font-bold" : ""}`}>
+                            {likes}
+                          </span>
                         </button>
                       </div>
 
                       {/* Use CTA */}
-                      <span className="text-xs font-semibold text-primary flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                      <span className="text-xs font-bold text-primary group-hover:underline transition-all">
                         Remix
-                        <ArrowRight className="w-3 h-3 text-primary" />
                       </span>
                     </div>
                   </div>

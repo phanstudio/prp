@@ -2,12 +2,13 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { TemplateCreatorRoute, GalleryRoute, MemeGeneratorRoute, MemeEditorRoute, SettingsRoute } from './utilities/router';
 import { RegularLayout, AdminLayout } from "./utilities/layouts";
-import 'unfonts.css'  // Required for unplugin-fonts
+import 'unfonts.css';  // Required for unplugin-fonts
 import './font.css';
 import './App.css';
 
@@ -23,43 +24,47 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Router>
-      <ToastProvider>
-        <AuthProvider>
-          <TemplateProvider>
-            <Routes>
-              {/* Public login route */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <TemplateProvider>
+              <Routes>
+                {/* Public login route */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
 
-              {/* Regular user routes - no auth required for viewing */}
-              <Route element={<RegularLayout />}>
-                <Route path="/" element={<GalleryRoute />} />
-                <Route path="/about" element={<GalleryRoute />} />
-                <Route path="/settings" element={<SettingsRoute />} />
-                <Route path="/generator/:templateId" element={<MemeGeneratorRoute />} />
-              </Route>
+                {/* Regular user routes - no auth required for viewing */}
+                <Route element={<RegularLayout />}>
+                  <Route path="/" element={<GalleryRoute />} />
+                  <Route path="/favorites" element={<Navigate to="/?favorites=true" replace />} />
+                  <Route path="/about" element={<GalleryRoute />} />
+                  <Route path="/settings" element={<SettingsRoute />} />
+                  <Route path="/generator/:templateId" element={<MemeGeneratorRoute />} />
+                </Route>
 
-              {/* Admin routes - protected with superuser check */}
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<GalleryRoute isAdmin />} />
-                <Route path="creator" element={<TemplateCreatorRoute />} />
-                <Route path="edit/:templateId" element={<MemeEditorRoute />} />
-                <Route path="settings" element={<SettingsRoute />} />
-              </Route>
+                {/* Admin routes - protected with superuser check */}
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<GalleryRoute isAdmin />} />
+                  <Route path="favorites" element={<Navigate to="/admin?favorites=true" replace />} />
+                  <Route path="creator" element={<TemplateCreatorRoute />} />
+                  <Route path="edit/:templateId" element={<MemeEditorRoute />} />
+                  <Route path="settings" element={<SettingsRoute />} />
+                </Route>
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </TemplateProvider>
-        </AuthProvider>
-      </ToastProvider>
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </TemplateProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </Router>
   );
 };

@@ -69,16 +69,20 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
     setTemplateTags((templateToEdit.tags || []).join(", "));
 
     // Load template text into canvas
-    loadTemplate({ textElements: templateToEdit.textElements });
+    const rawElements = templateToEdit.textElements ?? (templateToEdit as any).text_elements ?? [];
+    loadTemplate({ textElements: rawElements });
 
     // Load background image
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = async () => {
-      setImage(img);
-      await setBackgroundImage(templateToEdit.imageUrl);
-    };
-    img.src = templateToEdit.imageUrl;
+    const bgUrl = templateToEdit.imageUrl || (templateToEdit as any).image_url;
+    if (bgUrl) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = async () => {
+        setImage(img);
+        await setBackgroundImage(bgUrl);
+      };
+      img.src = bgUrl;
+    }
   }, [templateToEdit, loadTemplate, setBackgroundImage, setTemplateName, setTemplateDescription, setTemplateTags]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,7 +110,8 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
 
   const resetToTemplate = () => {
     if (!templateToEdit) return;
-    loadTemplate({ textElements: templateToEdit.textElements });
+    const rawElements = templateToEdit.textElements ?? (templateToEdit as any).text_elements ?? [];
+    loadTemplate({ textElements: rawElements });
     setSelectedElement(null);
   };
 

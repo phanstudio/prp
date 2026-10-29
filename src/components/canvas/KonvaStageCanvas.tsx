@@ -136,7 +136,8 @@ const EditableTextBox: React.FC<EditableTextBoxProps> = ({
   const boxWidth = Math.max(40, element.width || 300);
   const boxHeight = Math.max(25, element.height || 100);
 
-  const displayText = element.allCaps ? element.text.toUpperCase() : element.text;
+  const safeText = element.text ?? "";
+  const displayText = element.allCaps ? safeText.toUpperCase() : safeText;
 
   // Auto-fit font size based on width and height (re-computes when font is loaded)
   const autoFontSize = useMemo(() => {

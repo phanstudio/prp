@@ -34,14 +34,17 @@ export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) =>
 
   // Initialize the template
   useEffect(() => {
-    loadTemplate({ textElements: template.textElements });
-    if (template.imageUrl) {
-      setBackgroundImage(template.imageUrl);
+    const rawElements = template.textElements ?? (template as any).text_elements ?? [];
+    loadTemplate({ textElements: rawElements });
+    const imgUrl = template.imageUrl || (template as any).image_url;
+    if (imgUrl) {
+      setBackgroundImage(imgUrl);
     }
   }, [template, loadTemplate, setBackgroundImage]);
 
   const resetToTemplate = () => {
-    loadTemplate({ textElements: template.textElements });
+    const rawElements = template.textElements ?? (template as any).text_elements ?? [];
+    loadTemplate({ textElements: rawElements });
     setSelectedElement(null);
   };
 
@@ -78,13 +81,14 @@ export const MemeGenerator: React.FC<{ template: Template }> = ({ template }) =>
             type="button"
             onClick={() => toggleLike(template.id)}
             className={`btn btn-sm btn-ghost gap-1.5 border border-base-300 btn-press ${
-              liked ? "text-error border-error/30" : "text-base-content/70"
+              liked ? "text-error border-error/40 bg-error/10 font-bold" : "text-base-content/70"
             }`}
             title={liked ? "Unlike template" : "Like template"}
           >
             <Heart
+              fill={liked ? "currentColor" : "none"}
               className={`w-4 h-4 transition-transform ${
-                liked ? "fill-error text-error scale-110 heart-pop" : "text-base-content/60"
+                liked ? "text-error scale-110 heart-pop" : "text-base-content/60"
               }`}
             />
             <span className="font-mono text-xs">{likes}</span>

@@ -1,7 +1,8 @@
 // src/components/main/adminHeader.tsx
 import React from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { LogOut, Menu } from "lucide-react";
+import ThemeToggle from "./ThemeToggle";
 
 interface NavbarProps {
   username?: string;
@@ -9,6 +10,8 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
+  const location = useLocation();
+  const isAdminFavorites = location.pathname === "/admin" && location.search.includes("favorites=true");
   return (
     <header className="sticky top-0 z-40 bg-base-100/85 backdrop-blur-md border-b border-base-200/80 shadow-xs">
       <nav className="navbar max-w-7xl mx-auto px-4 sm:px-6">
@@ -24,8 +27,13 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
               className="menu menu-sm dropdown-content mt-3 z-50 p-2 shadow-xl bg-base-100 rounded-box w-56 border border-base-200"
             >
               <li>
-                <NavLink to="/admin" end className={({ isActive }) => (isActive ? "active font-semibold" : "")}>
+                <NavLink to="/admin" end className={({ isActive }) => (isActive && !isAdminFavorites ? "active font-semibold" : "")}>
                   Admin Collection
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/admin?favorites=true" className={isAdminFavorites ? "active font-semibold text-error" : ""}>
+                  Favorites
                 </NavLink>
               </li>
               <li>
@@ -53,7 +61,7 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
           </div>
 
           <Link to="/admin" className="flex items-center gap-2 font-bold text-lg sm:text-xl tracking-tight hover:opacity-90 transition-opacity">
-            <span className="text-accent font-extrabold">Admin Studio</span>
+            <span className="text-accent font-extrabold">Studio</span>
           </Link>
         </div>
 
@@ -65,8 +73,7 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
                 to="/admin"
                 end
                 className={({ isActive }) =>
-                  `rounded-lg px-3.5 py-1.5 transition-colors ${
-                    isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
+                  `rounded-lg px-3.5 py-1.5 transition-colors ${isActive && !isAdminFavorites ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
                   }`
                 }
               >
@@ -75,10 +82,20 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
             </li>
             <li>
               <NavLink
+                to="/admin?favorites=true"
+                className={() =>
+                  `rounded-lg px-3.5 py-1.5 transition-colors ${isAdminFavorites ? "bg-error/10 text-error font-semibold" : "hover:bg-base-200/60"
+                  }`
+                }
+              >
+                Favorites
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
                 to="/admin/creator"
                 className={({ isActive }) =>
-                  `rounded-lg px-3.5 py-1.5 transition-colors ${
-                    isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
+                  `rounded-lg px-3.5 py-1.5 transition-colors ${isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
                   }`
                 }
               >
@@ -89,8 +106,7 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
               <NavLink
                 to="/admin/settings"
                 className={({ isActive }) =>
-                  `rounded-lg px-3.5 py-1.5 transition-colors ${
-                    isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
+                  `rounded-lg px-3.5 py-1.5 transition-colors ${isActive ? "bg-base-200 text-primary font-semibold" : "hover:bg-base-200/60"
                   }`
                 }
               >
@@ -105,18 +121,23 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
           </ul>
         </div>
 
-        {/* Right side */}
-        <div className="navbar-end hidden lg:flex items-center gap-3">
-          <div className="badge badge-accent badge-sm py-2 px-3 font-medium">
-            Admin: {username || "Superuser"}
+        {/* Right side & Theme Toggle */}
+        <div className="navbar-end flex items-center gap-2">
+          {/* Theme switcher */}
+          <ThemeToggle />
+
+          <div className="hidden lg:flex items-center gap-2">
+            <div className="badge badge-accent badge-sm py-2 px-3 font-medium text-accent-content">
+              Admin: {username || "Superuser"}
+            </div>
+            <button
+              onClick={onLogout}
+              className="btn btn-sm btn-ghost btn-square text-base-content/70 hover:text-error btn-press"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={onLogout}
-            className="btn btn-sm btn-ghost btn-square text-base-content/70 hover:text-error"
-            title="Logout"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
         </div>
       </nav>
     </header>
