@@ -5,7 +5,6 @@ import type { Template } from "../components/types";
 import { TemplateCreator } from "../pages/templateCreatorPage";
 import { TemplateGallery } from "../pages/templateGalleryPage";
 import { SettingsPage } from "../pages/SettingsPage";
-// import { useTemplates } from "../contexts/TemplateContext";
 import { useTemplateResolver } from "../hooks/useTemplateResolver";
 import { useImagePreloader } from "../hooks/useImagePreloader";
 
@@ -33,8 +32,8 @@ export const GalleryRoute: React.FC<GalleryRouteProps> = ({ isAdmin = false }) =
   return (
     <TemplateGallery
       onSelectTemplate={handleSelectTemplate}
-      onEditTemplate={isAdmin ? handleEditTemplate : ()=>{}}
-      onCreateTemplate={isAdmin ? handleCreateTemplate : ()=>{}}
+      onEditTemplate={isAdmin ? handleEditTemplate : () => {}}
+      onCreateTemplate={isAdmin ? handleCreateTemplate : () => {}}
       isAdmin={isAdmin}
     />
   );
@@ -59,8 +58,9 @@ export const MemeGeneratorRoute: React.FC = () => {
 
   if (!template || !imgLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="loading loading-spinner loading-lg"></div>
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
+        <div className="loading loading-spinner loading-lg text-primary"></div>
+        <p className="text-xs text-base-content/60 font-medium">Loading meme studio...</p>
       </div>
     );
   }
@@ -79,8 +79,9 @@ export const MemeEditorRoute: React.FC = () => {
 
   if (!template || !imgLoaded) {
     return (
-      <div className="min-h-screen bg-base-200 flex items-center justify-center">
-        <div className="loading loading-spinner loading-lg"></div>
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
+        <div className="loading loading-spinner loading-lg text-primary"></div>
+        <p className="text-xs text-base-content/60 font-medium">Loading template editor...</p>
       </div>
     );
   }
