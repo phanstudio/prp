@@ -1,7 +1,7 @@
 // src/services/authService.ts
 import axios, { type AxiosInstance, AxiosError } from "axios";
 
-const BACKEND_URL = "http://127.0.0.1:8000"//"https://prp-backend-tau.vercel.app"//"https://prp-backend-st1s.onrender.com"; //"http://127.0.0.1:8000";
+const BACKEND_URL = "https://prp-backend-tau.vercel.app"; //"https://prp-backend-st1s.onrender.com"; //"http://127.0.0.1:8000";
 const TOKEN_KEY = "auth_token";
 
 interface LoginResponse {
@@ -47,7 +47,7 @@ class AuthService {
         }
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => Promise.reject(error),
     );
 
     // Response interceptor - handle 401 errors
@@ -64,7 +64,7 @@ class AuthService {
           }
         }
         return Promise.reject(error);
-      }
+      },
     );
   }
 
@@ -88,7 +88,7 @@ class AuthService {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       const { access_token } = response.data;
@@ -106,7 +106,7 @@ class AuthService {
   async register(
     email: string,
     password: string,
-    username?: string
+    username?: string,
   ): Promise<RegisterResult> {
     let user: User;
 
@@ -147,7 +147,7 @@ class AuthService {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       const { access_token } = response.data;
@@ -182,7 +182,7 @@ class AuthService {
         atob(base64)
           .split("")
           .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
+          .join(""),
       );
       return JSON.parse(jsonPayload);
     } catch {
